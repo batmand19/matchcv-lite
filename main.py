@@ -15,7 +15,7 @@ from text_extractor import extract_text_from_file
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="MatchCV Lite API", version="1.5.0")
+app = FastAPI(title="MatchCV Lite API", version="1.6.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -71,7 +71,7 @@ async def analizar(
                 logger.error("Unexpected extraction error: %s", traceback.format_exc())
                 return _error(
                     f"Error inesperado al leer el archivo '{filename}'. "
-                    f"Tipo: {type(e).__name__}. Intenta con otro formato o pega el texto directamente.",
+                    f"Tipo: {type(e).__name__}. Intenta pegar el texto directamente.",
                     500,
                 )
 
@@ -104,11 +104,19 @@ async def analizar(
         logger.error("ValueError in analyze_cv: %s", e)
         return _error(f"Error de análisis (datos inválidos): {e}", 422)
 
+    except MemoryError:
+        logger.error("MemoryError in analyze_cv")
+        return _error(
+            "El texto es demasiado largo para procesar. "
+            "Reduce el CV o la oferta a menos de 5.000 palabras.",
+            500,
+        )
+
     except Exception as e:
         logger.error("Unexpected error in analyze_cv: %s", traceback.format_exc())
         return _error(
-            f"Error inesperado durante el análisis: {type(e).__name__}. "
-            "El equipo ha sido notificado. Inténtalo de nuevo en unos segundos.",
+            f"Error inesperado durante el análisis: {type(e).__name__} — {str(e)[:200]}. "
+            "Inténtalo de nuevo o pega el texto directamente.",
             500,
         )
 
