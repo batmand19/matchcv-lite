@@ -602,3 +602,98 @@ document.getElementById('enviarEncuesta').addEventListener('click', async () => 
         </div>
     `;
 });
+
+let ofertaTabActiva = 'texto';
+
+function switchOfertaTab(tab) {
+    ofertaTabActiva = tab;
+
+    document.getElementById('tabOfertaTexto')
+        .classList.toggle('active', tab === 'texto');
+
+    document.getElementById('tabOfertaImagen')
+        .classList.toggle('active', tab === 'imagen');
+
+    document.getElementById('panelOfertaTexto').style.display =
+        tab === 'texto' ? '' : 'none';
+
+    document.getElementById('panelOfertaImagen').style.display =
+        tab === 'imagen' ? '' : 'none';
+}
+
+
+const ofertaImagenInput =
+    document.getElementById('ofertaImagen');
+
+if (ofertaImagenInput) {
+
+    ofertaImagenInput.addEventListener(
+        'change',
+        async function () {
+
+            const file = this.files[0];
+            if (!file) return;
+
+            const loader =
+                document.getElementById('ocrLoader');
+
+            const textarea =
+                document.getElementById('ofertaTexto');
+
+            loader.style.display = 'block';
+            loader.textContent =
+                'Procesando imagen y extrayendo texto...';
+
+            try {
+
+                const result =
+                    await Tesseract.recognize(
+                        file,
+                        'spa+eng',
+                        {
+                            logger: m => {
+                                if (m.progress) {
+                                    const pct =
+                                        Math.round(
+                                            m.progress * 100
+                                        );
+
+                                    loader.textContent =
+                                        `${m.status}... ${pct}%`;
+                                }
+                            }
+                        }
+                    );
+
+                const texto =
+                    (result.data.text || '').trim();
+
+                if (!texto || texto.length < 20) {
+                    loader.textContent =
+                        'No se pudo extraer suficiente texto.';
+                    return;
+                }
+
+                textarea.value = texto;
+
+                switchOfertaTab('texto');
+
+                textarea.style.borderColor =
+                    'var(--accent)';
+
+                setTimeout(() => {
+                    textarea.style.borderColor = '';
+                }, 1500);
+
+                loader.style.display = 'none';
+
+            } catch (error) {
+
+                console.error(error);
+
+                loader.textContent =
+                    'Error procesando la imagen.';
+            }
+        }
+    );
+}
