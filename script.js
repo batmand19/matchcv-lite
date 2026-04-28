@@ -564,10 +564,10 @@ document.getElementById('enviarEncuesta').addEventListener('click', async () => 
     
     // Construir los datos correctamente
     const datosEncuesta = {
-        util: surveyAnswers['¿Te resultó útil el análisis?'] || '',
-        pago: surveyAnswers['¿Pagarías por una versión más completa?'] || '',
-        gratis: surveyAnswers['¿Cuántos análisis gratis esperarías por mes?'] || '',
-        mejora: surveyAnswers['¿Qué funcionalidad te interesaría más?'] || '',
+        util: surveyAnswers['q1'] || '',
+        pago: surveyAnswers['q2'] || '',
+        gratis: surveyAnswers['q3'] || '',
+        mejora: surveyAnswers['q4'] || '',
         sugerencia: sugerencia
     };
     
