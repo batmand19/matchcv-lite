@@ -27,7 +27,7 @@
   background-color: #e9ecef;
 }
 
-.tabs-offer button.active {
+.tabs-oferta button.active {
   background-color: white;
   font-weight: 600;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
