@@ -288,9 +288,77 @@
 
         <!-- Step 2: Oferta -->
         <div class="mb-8">
+        
           <span class="section-label">2 — Oferta laboral</span>
-          <textarea id="ofertaTexto" rows="10" placeholder="Pega aquí el texto completo de la oferta laboral: descripción del puesto, funciones, requisitos, habilidades requeridas..." required></textarea>
-          <p style="font-size:0.75rem;color:var(--muted);margin-top:7px;">Incluye todo el texto — el sistema filtra automáticamente secciones irrelevantes.</p>
+        
+          <div class="tabs-offer">
+        
+            <button
+              type="button"
+              id="tabOfertaTexto"
+              class="active"
+              onclick="switchOfertaTab('texto')">
+              Pegar texto
+            </button>
+        
+            <button
+              type="button"
+              id="tabOfertaImagen"
+              onclick="switchOfertaTab('imagen')">
+              Subir imagen
+            </button>
+        
+          </div>
+        
+        
+          <!-- PANEL TEXTO -->
+        
+          <div id="panelOfertaTexto">
+        
+            <textarea
+              id="ofertaTexto"
+              rows="10"
+              placeholder="Pega aquí el texto completo de la oferta laboral: descripción del puesto, funciones, requisitos, habilidades requeridas..."
+              required>
+            </textarea>
+        
+            <p style="font-size:0.75rem;color:var(--muted);margin-top:7px;">
+              Incluye todo el texto — el sistema filtra automáticamente secciones irrelevantes.
+            </p>
+        
+          </div>
+        
+        
+          <!-- PANEL IMAGEN -->
+        
+          <div
+            id="panelOfertaImagen"
+            style="display:none;">
+        
+            <div class="upload-box">
+        
+              <input
+                type="file"
+                id="ofertaImagen"
+                accept="image/png,image/jpeg,image/jpg">
+        
+              <p style="margin-top:10px;">
+                Sube una captura de pantalla de la oferta laboral
+                (LinkedIn, Computrabajo, Indeed, etc.)
+              </p>
+        
+            </div>
+        
+            <div
+              id="ocrLoader"
+              style="display:none; margin-top:16px; font-size:0.9rem; color:var(--muted);">
+        
+              Procesando imagen...
+        
+            </div>
+        
+          </div>
+        
         </div>
 
         <!-- Action buttons -->
@@ -390,5 +458,6 @@
   </footer>
 
   <script src="script.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </body>
 </html>
