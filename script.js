@@ -1,9 +1,11 @@
+// frontend/script.js
+
 // ---- Config ----
 const BACKEND_URL = (() => {
-  if (typeof BACKEND_OVERRIDE !== 'undefined') return BACKEND_OVERRIDE;
+  if (typeof BACKEND_OVERRIDE !== "undefined") return BACKEND_OVERRIDE;
   const h = window.location.hostname;
-  if (h === 'localhost' || h === '127.0.0.1' || h === '') return 'http://localhost:8000';
-  return 'https://matchcv-backend.onrender.com';
+  if (h === "localhost" || h === "127.0.0.1" || h === "") return "http://localhost:8000";
+  return "https://matchcv-backend.onrender.com";
 })();
 
 // ---- Oferta de ejemplo ----
@@ -43,37 +45,97 @@ Herramientas requeridas
 Excel avanzado, Power BI, SQL, Python, pandas, numpy, Git, análisis de datos, planeación financiera, KPIs, dashboard, automatización.`;
 
 // ---- State ----
-let tabActiva       = 'archivo';
+let tabActiva = "archivo";
+let ofertaTabActiva = "texto";
 let ultimoResultado = null;
+const surveyAnswers = {};
 
-// ---- Tab switching ----
-function switchTab(tab) {
-  tabActiva = tab;
-  document.getElementById('tabArchivo').classList.toggle('active', tab === 'archivo');
-  document.getElementById('tabTexto').classList.toggle('active',   tab === 'texto');
-  document.getElementById('panelArchivo').style.display = tab === 'archivo' ? '' : 'none';
-  document.getElementById('panelTexto').style.display   = tab === 'texto'   ? '' : 'none';
-}
+// ---- DOM refs (assigned after DOMContentLoaded) ----
+let fileDrop, cvFile, fileLabel;
+let form, submitBtn, resultadoDiv, desgloseDiv, kwDiv, atsDiv, encuestaDiv, copyWrapper;
 
-// ---- File drag & drop ----
-const fileDrop  = document.getElementById('fileDrop');
-const cvFile    = document.getElementById('cvFile');
-const fileLabel = document.getElementById('fileLabel');
+// ---- Init on DOM ready ----
+document.addEventListener("DOMContentLoaded", () => {
+  fileDrop  = document.getElementById("fileDrop");
+  cvFile    = document.getElementById("cvFile");
+  fileLabel = document.getElementById("fileLabel");
 
-cvFile.addEventListener('change', updateFileLabel);
-fileDrop.addEventListener('dragover',  e => { e.preventDefault(); fileDrop.classList.add('dragover'); });
-fileDrop.addEventListener('dragleave', ()  => fileDrop.classList.remove('dragover'));
-fileDrop.addEventListener('drop', e => {
-  e.preventDefault();
-  fileDrop.classList.remove('dragover');
-  if (e.dataTransfer.files.length) {
-    const dt = new DataTransfer();
-    dt.items.add(e.dataTransfer.files[0]);
-    cvFile.files = dt.files;
-    updateFileLabel();
-  }
+  form         = document.getElementById("matchForm");
+  submitBtn    = document.getElementById("submitBtn");
+  resultadoDiv = document.getElementById("resultado");
+  desgloseDiv  = document.getElementById("desgloseCategories");
+  kwDiv        = document.getElementById("palabrasClave");
+  atsDiv       = document.getElementById("contextoAts");
+  encuestaDiv  = document.getElementById("encuesta");
+  copyWrapper  = document.getElementById("copyBtnWrapper");
+
+  // File drag & drop
+  cvFile.addEventListener("change", updateFileLabel);
+  fileDrop.addEventListener("dragover", e => { e.preventDefault(); fileDrop.classList.add("dragover"); });
+  fileDrop.addEventListener("dragleave", () => fileDrop.classList.remove("dragover"));
+  fileDrop.addEventListener("drop", e => {
+    e.preventDefault();
+    fileDrop.classList.remove("dragover");
+    if (e.dataTransfer.files.length) {
+      const dt = new DataTransfer();
+      dt.items.add(e.dataTransfer.files[0]);
+      cvFile.files = dt.files;
+      updateFileLabel();
+    }
+  });
+
+  // Character counter
+  document.getElementById("cvTexto").addEventListener("input", function () {
+    const len = this.value.length;
+    const counter = document.getElementById("cvTextoCount");
+    counter.textContent = len + " caracteres" + (len < 100 ? " (mínimo 100)" : " ✓");
+    counter.style.color = len >= 100 ? "var(--accent)" : "var(--muted)";
+  });
+
+  // Form submit
+  form.addEventListener("submit", handleSubmit);
+
+  // Survey pill buttons
+  document.querySelectorAll(".pill-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const q = btn.dataset.q;
+      document.querySelectorAll(`.pill-btn[data-q="${q}"]`).forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      surveyAnswers[q] = btn.dataset.v;
+    });
+  });
+
+  // Survey submit
+  document.getElementById("enviarEncuesta").addEventListener("click", handleEnviarEncuesta);
 });
 
+// ---- Tab switching (CV) ----
+function switchTab(tab) {
+  tabActiva = tab;
+  document.getElementById("tabArchivo").classList.toggle("active", tab === "archivo");
+  document.getElementById("tabTexto").classList.toggle("active", tab === "texto");
+  document.getElementById("panelArchivo").style.display = tab === "archivo" ? "" : "none";
+  document.getElementById("panelTexto").style.display   = tab === "texto"   ? "" : "none";
+}
+
+// ---- Tab switching (Oferta) ----
+function switchOfertaTab(tab) {
+  ofertaTabActiva = tab;
+  document.querySelectorAll("#panelOfertaTexto, #panelOfertaArchivo, #panelOfertaImagen").forEach(panel => {
+    panel.style.display = "none";
+  });
+  document.querySelectorAll("#tabOfertaTexto, #tabOfertaArchivo, #tabOfertaImagen").forEach(button => {
+    button.classList.remove("active");
+  });
+  const panelId  = "panelOferta"  + tab.charAt(0).toUpperCase() + tab.slice(1);
+  const buttonId = "tabOferta" + tab.charAt(0).toUpperCase() + tab.slice(1);
+  const panel    = document.getElementById(panelId);
+  const button   = document.getElementById(buttonId);
+  if (panel)  panel.style.display = "block";
+  if (button) button.classList.add("active");
+}
+
+// ---- File label update ----
 function updateFileLabel() {
   const file = cvFile.files[0];
   if (!file) return;
@@ -83,83 +145,76 @@ function updateFileLabel() {
       <polyline points="14,2 14,8 20,8"/>
     </svg>
     <p style="font-size:0.95rem;font-weight:500;color:var(--accent);">${escapeHtml(file.name)}</p>
-    <p style="font-size:0.75rem;color:var(--muted);margin-top:5px;">${(file.size/1024).toFixed(0)} KB · Listo</p>
+    <p style="font-size:0.75rem;color:var(--muted);margin-top:5px;">${(file.size / 1024).toFixed(0)} KB · Listo</p>
   `;
 }
 
-// Character counter
-document.getElementById('cvTexto').addEventListener('input', function () {
-  const len     = this.value.length;
-  const counter = document.getElementById('cvTextoCount');
-  counter.textContent = len + ' caracteres' + (len < 100 ? ' (mínimo 100)' : ' ✓');
-  counter.style.color = len >= 100 ? 'var(--accent)' : 'var(--muted)';
-});
-
 // ---- Front-end validation ----
 function validarFormulario() {
-  const oferta = (document.getElementById('ofertaTexto').value || '').trim();
+  const ofertaEl = document.getElementById("ofertaTexto");
+  const oferta = ofertaEl ? ofertaEl.value.trim() : "";
   if (oferta.length < 100) {
-    showError('La oferta laboral debe tener al menos 100 caracteres. Pega el texto completo de la vacante.');
+    showError("La oferta laboral debe tener al menos 100 caracteres. Pega el texto completo de la vacante.");
     return false;
   }
-  if (tabActiva === 'archivo') {
+  if (tabActiva === "archivo") {
     const file = cvFile.files[0];
-    if (!file) { showError('Por favor selecciona tu archivo CV (PDF, DOCX o TXT).'); return false; }
+    if (!file) { showError("Por favor selecciona tu archivo CV (PDF, DOCX o TXT)."); return false; }
     if (file.size > 5 * 1024 * 1024) {
       showError(`El archivo "${escapeHtml(file.name)}" supera el límite de 5 MB.`);
       return false;
     }
-    const ext = file.name.toLowerCase().split('.').pop();
-    if (!['pdf','docx','txt'].includes(ext)) {
+    const ext = file.name.toLowerCase().split(".").pop();
+    if (!["pdf", "docx", "txt"].includes(ext)) {
       showError(`Formato ".${ext}" no soportado. Sube un archivo PDF, DOCX o TXT.`);
       return false;
     }
   } else {
-    const cvText = (document.getElementById('cvTexto').value || '').trim();
+    const cvText = (document.getElementById("cvTexto").value || "").trim();
     if (cvText.length < 100) {
-      showError('El texto del CV debe tener al menos 100 caracteres.');
+      showError("El texto del CV debe tener al menos 100 caracteres.");
       return false;
     }
   }
   return true;
 }
 
-// ---- Load CV example (does NOT touch oferta) ----
+// ---- Load CV example ----
 async function cargarCVEjemplo() {
-  const btn = document.getElementById('btnCVEjemplo');
+  const btn = document.getElementById("btnCVEjemplo");
   btn.disabled = true;
-  btn.textContent = 'Cargando...';
+  btn.textContent = "Cargando...";
   try {
-    const resp   = await fetch('cv_ejemplo.txt');
+    const resp   = await fetch("cv_ejemplo.txt");
     const cvText = resp.ok ? await resp.text() : null;
     const text   = (cvText && cvText.trim().length >= 100) ? cvText.trim() : getFallbackCV();
-    if (tabActiva === 'archivo') {
-      const blob = new Blob([text], { type: 'text/plain' });
-      const file = new File([blob], 'cv_ejemplo.txt', { type: 'text/plain' });
+    if (tabActiva === "archivo") {
+      const blob = new Blob([text], { type: "text/plain" });
+      const file = new File([blob], "cv_ejemplo.txt", { type: "text/plain" });
       const dt   = new DataTransfer();
       dt.items.add(file);
       cvFile.files = dt.files;
       updateFileLabel();
     } else {
-      document.getElementById('cvTexto').value = text;
-      document.getElementById('cvTexto').dispatchEvent(new Event('input'));
+      document.getElementById("cvTexto").value = text;
+      document.getElementById("cvTexto").dispatchEvent(new Event("input"));
     }
   } catch {
-    switchTab('texto');
-    document.getElementById('cvTexto').value = getFallbackCV();
-    document.getElementById('cvTexto').dispatchEvent(new Event('input'));
+    switchTab("texto");
+    document.getElementById("cvTexto").value = getFallbackCV();
+    document.getElementById("cvTexto").dispatchEvent(new Event("input"));
   } finally {
     btn.disabled    = false;
-    btn.textContent = '📄 Cargar CV de ejemplo';
+    btn.textContent = "📄 Cargar CV de ejemplo";
   }
 }
 
-// ---- Load offer example (does NOT touch CV) ----
+// ---- Load offer example ----
 function cargarOfertaEjemplo() {
-  document.getElementById('ofertaTexto').value = OFERTA_EJEMPLO;
-  const ta = document.getElementById('ofertaTexto');
-  ta.style.borderColor = 'var(--accent)';
-  setTimeout(() => { ta.style.borderColor = ''; }, 1200);
+  const ta = document.getElementById("ofertaTexto");
+  ta.value = OFERTA_EJEMPLO;
+  ta.style.borderColor = "var(--accent)";
+  setTimeout(() => { ta.style.borderColor = ""; }, 1200);
 }
 
 function getFallbackCV() {
@@ -192,44 +247,35 @@ Certificación Power BI PL-300 — Microsoft (2022)`;
 }
 
 // ---- Form submit ----
-const form         = document.getElementById('matchForm');
-const submitBtn    = document.getElementById('submitBtn');
-const resultadoDiv = document.getElementById('resultado');
-const desgloseDiv  = document.getElementById('desgloseCategories');
-const kwDiv        = document.getElementById('palabrasClave');
-const atsDiv       = document.getElementById('contextoAts');
-const encuestaDiv  = document.getElementById('encuesta');
-const copyWrapper  = document.getElementById('copyBtnWrapper');
-
-form.addEventListener('submit', async e => {
+async function handleSubmit(e) {
   e.preventDefault();
   if (!validarFormulario()) return;
 
-  const oferta = document.getElementById('ofertaTexto').value.trim();
+  const oferta = document.getElementById("ofertaTexto").value.trim();
   const formData = new FormData();
-  formData.append('oferta_texto', oferta);
-  if (tabActiva === 'archivo') {
-    formData.append('file', cvFile.files[0]);
+  formData.append("oferta_texto", oferta);
+  if (tabActiva === "archivo") {
+    formData.append("file", cvFile.files[0]);
   } else {
-    formData.append('cv_texto', document.getElementById('cvTexto').value.trim());
+    formData.append("cv_texto", document.getElementById("cvTexto").value.trim());
   }
 
-  submitBtn.disabled     = true;
-  submitBtn.innerHTML    = `<span class="spinner"></span> Analizando...`;
-  resultadoDiv.className = 'hidden';
-  resultadoDiv.innerHTML = '';
-  desgloseDiv.className  = 'hidden';
-  desgloseDiv.innerHTML  = '';
-  kwDiv.className        = 'hidden';
-  kwDiv.innerHTML        = '';
-  atsDiv.className       = 'hidden';
-  atsDiv.innerHTML       = '';
-  copyWrapper.classList.add('hidden');
+  submitBtn.disabled  = true;
+  submitBtn.innerHTML = `<span class="spinner"></span> Analizando...`;
+  resultadoDiv.className = "hidden";
+  resultadoDiv.innerHTML = "";
+  desgloseDiv.className  = "hidden";
+  desgloseDiv.innerHTML  = "";
+  kwDiv.className        = "hidden";
+  kwDiv.innerHTML        = "";
+  atsDiv.className       = "hidden";
+  atsDiv.innerHTML       = "";
+  copyWrapper.classList.add("hidden");
 
   try {
     let res;
     try {
-      res = await fetch(`${BACKEND_URL}/analizar`, { method: 'POST', body: formData });
+      res = await fetch(`${BACKEND_URL}/analizar`, { method: "POST", body: formData });
     } catch (netErr) {
       showError(`Error de conexión con el servidor. Asegúrate de que el backend esté corriendo en ${BACKEND_URL}. Detalle: ${netErr.message}`);
       return;
@@ -249,11 +295,11 @@ form.addEventListener('submit', async e => {
       renderDesglose(data.desglose || {});
       renderPalabrasClave(data.palabras_clave_oferta || []);
       renderContextoAts(data.contexto_ats || []);
-      copyWrapper.classList.remove('hidden');
-      encuestaDiv.classList.remove('hidden');
-      setTimeout(() => encuestaDiv.scrollIntoView({ behavior: 'smooth', block: 'start' }), 800);
+      copyWrapper.classList.remove("hidden");
+      encuestaDiv.classList.remove("hidden");
+      setTimeout(() => encuestaDiv.scrollIntoView({ behavior: "smooth", block: "start" }), 800);
     } else {
-      showError(`Error del servidor: ${data.error || 'Error desconocido.'}`);
+      showError(`Error del servidor: ${data.error || "Error desconocido."}`);
     }
   } finally {
     submitBtn.disabled  = false;
@@ -263,15 +309,15 @@ form.addEventListener('submit', async e => {
       </svg>
       Analizar encaje`;
   }
-});
+}
 
 // ---- Render resultado ----
 function renderResultado(data) {
   const { encaje_global, nivel, aporta, brechas, recomendaciones, frase_final } = data;
 
-  const badgeClass = nivel === 'Buen encaje' ? 'badge-good' : nivel === 'Encaje medio' ? 'badge-mid' : 'badge-low';
-  const barColor   = nivel === 'Buen encaje' ? 'var(--accent)' : nivel === 'Encaje medio' ? 'var(--warn)' : 'var(--danger)';
-  const fraseBg    = nivel === 'Buen encaje' ? '#f0faf4' : nivel === 'Encaje medio' ? 'var(--warn-light)' : 'var(--danger-light)';
+  const badgeClass = nivel === "Buen encaje" ? "badge-good" : nivel === "Encaje medio" ? "badge-mid" : "badge-low";
+  const barColor   = nivel === "Buen encaje" ? "var(--accent)" : nivel === "Encaje medio" ? "var(--warn)" : "var(--danger)";
+  const fraseBg    = nivel === "Buen encaje" ? "#f0faf4" : nivel === "Encaje medio" ? "var(--warn-light)" : "var(--danger-light)";
 
   function buildList(items, emptyMsg) {
     if (!items || !items.length) return `<p style="font-size:0.9rem;color:var(--muted);">${emptyMsg}</p>`;
@@ -279,7 +325,7 @@ function renderResultado(data) {
       <div class="result-list-item">
         <span class="emoji">${item.emoji}</span>
         <span>${escapeHtml(item.text)}</span>
-      </div>`).join('');
+      </div>`).join("");
   }
 
   resultadoDiv.innerHTML = `
@@ -301,15 +347,15 @@ function renderResultado(data) {
       <div class="space-y-5">
         <div class="section-aportes fade-in stagger-1">
           <p class="section-title" style="color:var(--accent);">Lo que aportas</p>
-          ${buildList((aporta||[]).map(a=>({emoji:'✅',text:a})), 'No se detectaron fortalezas destacadas.')}
+          ${buildList((aporta || []).map(a => ({ emoji: "✅", text: a })), "No se detectaron fortalezas destacadas.")}
         </div>
         <div class="section-brechas fade-in stagger-2">
           <p class="section-title" style="color:var(--danger);">Brechas detectadas</p>
-          ${buildList((brechas||[]).map(b=>({emoji:'⚠️',text:b})), 'No se detectaron brechas significativas.')}
+          ${buildList((brechas || []).map(b => ({ emoji: "⚠️", text: b })), "No se detectaron brechas significativas.")}
         </div>
         <div class="section-recos fade-in stagger-3">
           <p class="section-title" style="color:#1d4ed8;">Recomendaciones</p>
-          ${buildList((recomendaciones||[]).map(r=>({emoji:'📝',text:r})), 'No hay recomendaciones adicionales.')}
+          ${buildList((recomendaciones || []).map(r => ({ emoji: "📝", text: r })), "No hay recomendaciones adicionales.")}
         </div>
       </div>
 
@@ -320,47 +366,27 @@ function renderResultado(data) {
     </div>
   `;
 
-  resultadoDiv.classList.remove('hidden');
-  resultadoDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  resultadoDiv.classList.remove("hidden");
+  resultadoDiv.scrollIntoView({ behavior: "smooth", block: "start" });
   setTimeout(() => {
-    animateNumber('animatedScore', encaje_global, 1200);
-    document.getElementById('progressFill').style.width = `${encaje_global}%`;
+    animateNumber("animatedScore", encaje_global, 1200);
+    document.getElementById("progressFill").style.width = `${encaje_global}%`;
   }, 80);
 }
 
 // ---- Render desglose category bars ----
 function renderDesglose(desglose) {
   const cats = [
-    {
-      key:   'herramientas',
-      label: '🔧 Herramientas técnicas',
-      max:   35,
-      color: 'var(--accent)',
-    },
-    {
-      key:   'funcional',
-      label: '📋 Palabras clave funcionales',
-      max:   35,
-      color: '#1d4ed8',
-    },
-    {
-      key:   'perfil',
-      label: '🎯 Alineación de perfil',
-      max:   20,
-      color: 'var(--warn)',
-    },
-    {
-      key:   'claridad',
-      label: '📐 Claridad y estructura',
-      max:   10,
-      color: '#6d28d9',
-    },
+    { key: "herramientas", label: "🔧 Herramientas técnicas",        max: 35, color: "var(--accent)" },
+    { key: "funcional",    label: "📋 Palabras clave funcionales",    max: 35, color: "#1d4ed8" },
+    { key: "perfil",       label: "🎯 Alineación de perfil",          max: 20, color: "var(--warn)" },
+    { key: "claridad",     label: "📐 Claridad y estructura",         max: 10, color: "#6d28d9" },
   ];
 
   const rows = cats.map(cat => {
-    const raw   = desglose[cat.key] ?? 0;
-    const pct   = Math.min(100, Math.round((raw / cat.max) * 100));
-    const id    = `bar-${cat.key}`;
+    const raw = desglose[cat.key] ?? 0;
+    const pct = Math.min(100, Math.round((raw / cat.max) * 100));
+    const id  = `bar-${cat.key}`;
     return `
       <div style="margin-bottom:14px;">
         <div class="flex justify-between items-center" style="margin-bottom:5px;">
@@ -377,7 +403,7 @@ function renderDesglose(desglose) {
         </div>
       </div>
     `;
-  }).join('');
+  }).join("");
 
   desgloseDiv.innerHTML = `
     <div class="card p-6 md:p-8 fade-in stagger-4 mt-5" style="border-color:#e5e1d8;">
@@ -389,13 +415,12 @@ function renderDesglose(desglose) {
       ${rows}
     </div>
   `;
-  desgloseDiv.classList.remove('hidden');
+  desgloseDiv.classList.remove("hidden");
 
-  // Animate all bars after a short delay
   setTimeout(() => {
     cats.forEach(cat => {
       const el = document.getElementById(`bar-${cat.key}`);
-      if (el) el.style.width = el.dataset.target + '%';
+      if (el) el.style.width = el.dataset.target + "%";
     });
   }, 200);
 }
@@ -403,7 +428,7 @@ function renderDesglose(desglose) {
 // ---- Render keyword badges ----
 function renderPalabrasClave(keywords) {
   if (!keywords || !keywords.length) return;
-  const chips = keywords.map(k => `<span class="kw-chip">${escapeHtml(k)}</span>`).join('');
+  const chips = keywords.map(k => `<span class="kw-chip">${escapeHtml(k)}</span>`).join("");
   kwDiv.innerHTML = `
     <div class="section-kw fade-in stagger-5 mt-5">
       <p class="section-title" style="color:#374151;">🔑 Palabras clave que los sistemas ATS buscarán</p>
@@ -413,7 +438,7 @@ function renderPalabrasClave(keywords) {
       <div>${chips}</div>
     </div>
   `;
-  kwDiv.classList.remove('hidden');
+  kwDiv.classList.remove("hidden");
 }
 
 // ---- Render ATS explanation ----
@@ -423,8 +448,8 @@ function renderContextoAts(consejos) {
         <div class="result-list-item">
           <span class="emoji">🔍</span>
           <span style="font-size:0.9rem;line-height:1.6;">${c}</span>
-        </div>`).join('')
-    : '';
+        </div>`).join("")
+    : "";
 
   atsDiv.innerHTML = `
     <div class="section-ats fade-in mt-5">
@@ -451,20 +476,20 @@ function renderContextoAts(consejos) {
         </ul>
       </div>
 
-      <p style="font-size:0.88rem;line-height:1.65;color:#374151;margin-bottom:${consejosHtml ? '14px' : '10px'};">
+      <p style="font-size:0.88rem;line-height:1.65;color:#374151;margin-bottom:${consejosHtml ? "14px" : "10px"};">
         <strong>¿Por qué es útil?</strong> Hasta el <strong>75% de los CVs</strong> son descartados
         automáticamente por no incluir palabras clave exactas. Este análisis te ayuda a identificar
         esos filtros invisibles.
       </p>
 
-      ${consejosHtml ? `<div>${consejosHtml}</div>` : ''}
+      ${consejosHtml ? `<div>${consejosHtml}</div>` : ""}
 
       <p style="font-size:0.82rem;color:var(--muted);margin-top:14px;padding-top:12px;border-top:1px solid var(--ats-border);">
         💡 Los resultados son orientativos. Cada empresa usa su propio sistema de filtrado.
       </p>
     </div>
   `;
-  atsDiv.classList.remove('hidden');
+  atsDiv.classList.remove("hidden");
 }
 
 // ---- Copy analysis ----
@@ -472,37 +497,37 @@ function copiarAnalisis() {
   if (!ultimoResultado) return;
   const { encaje_global, nivel, aporta, brechas, recomendaciones, frase_final } = ultimoResultado;
   const lines = [
-    '═══════════════════════════════════',
-    '       ANÁLISIS MatchCV Lite',
-    '═══════════════════════════════════',
-    '',
+    "═══════════════════════════════════",
+    "       ANÁLISIS MatchCV Lite",
+    "═══════════════════════════════════",
+    "",
     `Encaje global: ${encaje_global}% — ${nivel}`,
-    '',
-    '✅ LO QUE APORTAS',
-    ...(aporta.length  ? aporta.map(a  => `  • ${a}`)               : ['  (sin aportes detectados)']),
-    '',
-    '⚠️ BRECHAS DETECTADAS',
-    ...(brechas.length ? brechas.map(b => `  • ${b}`)               : ['  (sin brechas detectadas)']),
-    '',
-    '📝 RECOMENDACIONES',
-    ...(recomendaciones.length ? recomendaciones.map((r,i) => `  ${i+1}. ${r}`) : ['  (sin recomendaciones)']),
-    '',
-    '───────────────────────────────────',
+    "",
+    "✅ LO QUE APORTAS",
+    ...(aporta.length  ? aporta.map(a  => `  • ${a}`)                          : ["  (sin aportes detectados)"]),
+    "",
+    "⚠️ BRECHAS DETECTADAS",
+    ...(brechas.length ? brechas.map(b => `  • ${b}`)                          : ["  (sin brechas detectadas)"]),
+    "",
+    "📝 RECOMENDACIONES",
+    ...(recomendaciones.length ? recomendaciones.map((r, i) => `  ${i + 1}. ${r}`) : ["  (sin recomendaciones)"]),
+    "",
+    "───────────────────────────────────",
     frase_final,
-    '───────────────────────────────────',
-    '',
-    'Generado por MatchCV Lite',
+    "───────────────────────────────────",
+    "",
+    "Generado por MatchCV Lite",
   ];
-  navigator.clipboard.writeText(lines.join('\n'))
-    .then(()  => showToast('✓ Análisis copiado'))
-    .catch(()  => showToast('No se pudo copiar — inténtalo manualmente'));
+  navigator.clipboard.writeText(lines.join("\n"))
+    .then(()  => showToast("✓ Análisis copiado"))
+    .catch(()  => showToast("No se pudo copiar — inténtalo manualmente"));
 }
 
 function showToast(msg) {
-  const t = document.getElementById('copyToast');
+  const t = document.getElementById("copyToast");
   t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2200);
 }
 
 // ---- Helpers ----
@@ -512,7 +537,7 @@ function animateNumber(id, target, duration) {
   const startTime = performance.now();
   function step(now) {
     const p = Math.min((now - startTime) / duration, 1);
-    el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))) + '%';
+    el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))) + "%";
     if (p < 1) requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
@@ -534,237 +559,56 @@ function showError(msg) {
       </div>
     </div>
   `;
-  resultadoDiv.classList.remove('hidden');
-  resultadoDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  resultadoDiv.classList.remove("hidden");
+  resultadoDiv.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function escapeHtml(str) {
   return String(str)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
-// --- Survey ----
-const surveyAnswers = {};
+// ---- Survey submit ----
+async function handleEnviarEncuesta() {
+  const btn        = document.getElementById("enviarEncuesta");
+  const sugerencia = document.getElementById("sugerenciaTexto")?.value?.trim() || "";
 
-document.querySelectorAll('.pill-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const q = btn.dataset.q;
-        document.querySelectorAll(`.pill-btn[data-q="${q}"]`).forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        surveyAnswers[q] = btn.dataset.v;
-    });
-});
+  btn.disabled    = true;
+  btn.textContent = "Enviando...";
 
-document.getElementById('enviarEncuesta').addEventListener('click', async () => {
-    const btn = document.getElementById('enviarEncuesta');
-    const sugerencia = document.getElementById('sugerenciaTexto')?.value?.trim() || '';
-    
-    btn.disabled = true;
-    btn.textContent = 'Enviando...';
-    
-    // Construir los datos correctamente
-    const datosEncuesta = {
-        util: surveyAnswers['q1'] || '',
-        pago: surveyAnswers['q2'] || '',
-        gratis: surveyAnswers['q3'] || '',
-        mejora: surveyAnswers['q4'] || '',
-        sugerencia: sugerencia
-    };
-    
-    console.log('Enviando datos:', datosEncuesta); // Para depurar
-    
-    // URL de Apps Script (cambiala por la tuya)
-    const FEEDBACK_URL = `${BACKEND_URL}/feedback`;
-    
-    try {
-        const response = await fetch(FEEDBACK_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(datosEncuesta)
-        });
-    
-        const resultado = await response.json();
-        console.log('Respuesta backend:', resultado);
-    
-    } catch (error) {
-        console.error('Error al enviar feedback:', error);
-    }
-    
-    // Mostrar mensaje de agradecimiento
-    const encuestaDiv = document.getElementById('encuesta');
-    encuestaDiv.innerHTML = `
-        <div class="text-center py-12">
-            <p style="font-size:2.4rem;margin-bottom:12px;">🙌</p>
-            <p class="syne font-bold text-base">¡Gracias por tu ayuda!</p>
-            <p style="font-size:0.9rem;color:var(--muted);margin-top:6px;line-height:1.5;">Tu feedback nos ayuda a mejorar MatchCV Lite.</p>
-        </div>
-    `;
-});
-
-let ofertaTabActiva = 'texto';
-
-function switchOfertaTab(tab) {
-  // Ocultar todos los paneles
-  document.querySelectorAll('#panelOfertaTexto, #panelOfertaArchivo, #panelOfertaImagen').forEach(panel => {
-    panel.style.display = 'none';
-  });
-  // Desactivar todos los botones
-  document.querySelectorAll('#tabOfertaTexto, #tabOfertaArchivo, #tabOfertaImagen').forEach(button => {
-    button.classList.remove('active');
-  });
-  // Mostrar el panel seleccionado y activar el botón
-  document.getElementById(`panelOferta${tab.charAt(0).toUpperCase() + tab.slice(1)}`).style.display = 'block';
-  document.getElementById(`tabOferta${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
-}
-
-const ofertaImagenInput =
-    document.getElementById('ofertaImagen');
-
-if (ofertaImagenInput) {
-
-    ofertaImagenInput.addEventListener(
-        'change',
-        async function () {
-
-            const files = Array.from(this.files);
-
-            if (!files.length) return;
-            
-            if (files.length > 2) {
-                alert("Solo puedes subir máximo 2 imágenes.");
-                this.value = "";
-                return;
-            }
-
-            const loader =
-                document.getElementById('ocrLoader');
-
-            const textarea =
-                document.getElementById('ofertaTexto');
-
-            loader.style.display = 'block';
-            loader.textContent =
-                'Procesando imagen y extrayendo texto...';
-
-            try {
-
-            let textoFinal = "";
-            
-            for (const file of files) {
-            
-                const result =
-                    await Tesseract.recognize(
-                        file,
-                        'spa+eng',
-                        {
-                            logger: m => {
-                                if (m.progress) {
-                                    const pct =
-                                        Math.round(
-                                            m.progress * 100
-                                        );
-
-                                    loader.textContent =
-                                        `${m.status}... ${pct}%`;
-                                }
-                            }
-                        }
-                    );
-
-                const texto =
-                    (result.data.text || '').trim();
-                
-                textoFinal += "\n\n" + texto;
-                }
-
-                if (!textoFinal || textoFinal.length < 20) {
-                    loader.textContent =
-                        'No se pudo extraer suficiente texto.';
-                    return;
-                }
-
-                textarea.value = textoFinal.trim();
-
-                switchOfertaTab('texto');
-
-                textarea.style.borderColor =
-                    'var(--accent)';
-
-                setTimeout(() => {
-                    textarea.style.borderColor = '';
-                }, 1500);
-
-                loader.style.display = 'none';
-
-            } catch (error) {
-
-                console.error(error);
-
-                loader.textContent =
-                    'Error procesando la imagen.';
-            }
-        }
-    );
-}
-// Cargar Tesseract.js desde CDN
-const script = document.createElement('script');
-script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js';
-document.head.appendChild(script);
-
-// Función para procesar imagen con OCR
-async function processImageWithOCR(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  // Validar tamaño (5MB)
-  if (file.size > 5 * 1024 * 1024) {
-    alert("La imagen debe ser menor a 5MB.");
-    return;
-  }
-
-  // Mostrar loader
-  document.getElementById('ocrLoader').style.display = 'block';
+  const datosEncuesta = {
+    util:      surveyAnswers["q1"] || "",
+    pago:      surveyAnswers["q2"] || "",
+    gratis:    surveyAnswers["q3"] || "",
+    mejora:    surveyAnswers["q4"] || "",
+    sugerencia: sugerencia,
+  };
 
   try {
-    const { data: { text } } = await Tesseract.recognize(file, 'spa+eng', {
-      logger: m => console.log(m),
+    const response = await fetch(`${BACKEND_URL}/feedback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(datosEncuesta),
     });
-
-    // Asignar el texto extraído al textarea de oferta (o enviar directamente al backend)
-    document.getElementById('ofertaTexto').value = text;
-    switchOfertaTab('texto'); // Opcional: cambiar al tab de texto para revisar el resultado
+    await response.json();
   } catch (error) {
-    console.error("Error en OCR:", error);
-    alert("Error al procesar la imagen. Intenta con otra.");
-  } finally {
-    document.getElementById('ocrLoader').style.display = 'none';
+    console.error("Error al enviar feedback:", error);
   }
+
+  const encuestaDivLocal = document.getElementById("encuesta");
+  encuestaDivLocal.innerHTML = `
+    <div class="text-center py-12">
+      <p style="font-size:2.4rem;margin-bottom:12px;">🙌</p>
+      <p class="syne font-bold text-base">¡Gracias por tu ayuda!</p>
+      <p style="font-size:0.9rem;color:var(--muted);margin-top:6px;line-height:1.5;">Tu feedback nos ayuda a mejorar MatchCV Lite.</p>
+    </div>
+  `;
 }
 
-// Función para cambiar entre tabs de oferta laboral
-function switchOfertaTab(tab) {
-  // Ocultar todos los paneles
-  document.querySelectorAll('#panelOfertaTexto, #panelOfertaArchivo, #panelOfertaImagen').forEach(panel => {
-    panel.style.display = 'none';
-  });
-  // Desactivar todos los botones
-  document.querySelectorAll('#tabOfertaTexto, #tabOfertaArchivo, #tabOfertaImagen').forEach(button => {
-    button.classList.remove('active');
-  });
-  // Mostrar el panel seleccionado y activar el botón
-  document.getElementById(`panelOferta${tab.charAt(0).toUpperCase() + tab.slice(1)}`).style.display = 'block';
-  document.getElementById(`tabOferta${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
-}
-
-// Cargar Tesseract.js desde CDN
-const script = document.createElement('script');
-script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js';
-script.onload = () => console.log("Tesseract.js cargado correctamente.");
-document.head.appendChild(script);
-
-// Función para manejar la subida de archivos de oferta
+// ---- Oferta file upload handler ----
 function handleOfertaFileUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -772,29 +616,67 @@ function handleOfertaFileUpload(event) {
     alert("El archivo debe ser menor a 5MB.");
     return;
   }
-  console.log("Archivo de oferta seleccionado:", file.name);
-  // TODO: Aquí iría la lógica para enviar el archivo al backend
+
+  const formData = new FormData();
+  formData.append("oferta_archivo", file);
+
+  fetch(`${BACKEND_URL}/extraer-oferta`, { method: "POST", body: formData })
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.texto) {
+        document.getElementById("ofertaTexto").value = data.texto;
+        switchOfertaTab("texto");
+        const ta = document.getElementById("ofertaTexto");
+        ta.style.borderColor = "var(--accent)";
+        setTimeout(() => { ta.style.borderColor = ""; }, 1200);
+      } else {
+        alert("No se pudo extraer texto del archivo. Intenta pegarlo manualmente.");
+      }
+    })
+    .catch(() => {
+      alert("Error al enviar el archivo al servidor. Intenta pegarlo manualmente.");
+    });
 }
 
-// Función para procesar imagen con OCR
+// ---- OCR image processing ----
 async function processImageWithOCR(event) {
   const file = event.target.files[0];
   if (!file) return;
+
   if (file.size > 5 * 1024 * 1024) {
     alert("La imagen debe ser menor a 5MB.");
     return;
   }
-  document.getElementById('ocrLoader').style.display = 'block';
+
+  const loader   = document.getElementById("ocrLoader");
+  const textarea = document.getElementById("ofertaTexto");
+
+  loader.style.display = "block";
+  loader.textContent   = "Procesando imagen y extrayendo texto...";
+
   try {
-    const { data: { text } } = await Tesseract.recognize(file, 'spa+eng', {
-      logger: m => console.log(m),
+    const result = await Tesseract.recognize(file, "spa+eng", {
+      logger: m => {
+        if (m.progress) {
+          loader.textContent = `${m.status}... ${Math.round(m.progress * 100)}%`;
+        }
+      },
     });
-    document.getElementById('ofertaTexto').value = text;
-    switchOfertaTab('texto'); // Cambiar al tab de texto para revisar el resultado
+
+    const texto = (result.data.text || "").trim();
+
+    if (!texto || texto.length < 20) {
+      loader.textContent = "No se pudo extraer suficiente texto.";
+      return;
+    }
+
+    textarea.value = texto;
+    switchOfertaTab("texto");
+    textarea.style.borderColor = "var(--accent)";
+    setTimeout(() => { textarea.style.borderColor = ""; }, 1500);
+    loader.style.display = "none";
   } catch (error) {
     console.error("Error en OCR:", error);
-    alert("Error al procesar la imagen. Intenta con otra.");
-  } finally {
-    document.getElementById('ocrLoader').style.display = 'none';
+    loader.textContent = "Error procesando la imagen.";
   }
 }

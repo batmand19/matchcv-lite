@@ -1,3 +1,4 @@
+<!-- frontend/index.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -5,10 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MatchCV Lite – Analiza tu CV</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,400&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles.css">
   <style>
     :root {
       --ink: #0f0f0f;
@@ -33,7 +34,7 @@
     html { scroll-behavior: smooth; }
 
     body {
-      font-family: 'DM Sans', sans-serif;
+      font-family: "DM Sans", sans-serif;
       font-size: 18px;
       line-height: 1.65;
       background-color: var(--paper);
@@ -42,7 +43,7 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    .syne { font-family: 'Syne', sans-serif; }
+    .syne { font-family: "Syne", sans-serif; }
 
     .grain {
       position: fixed; inset: 0; pointer-events: none; z-index: 100;
@@ -59,7 +60,7 @@
     }
 
     .btn-primary {
-      font-family: 'Syne', sans-serif;
+      font-family: "Syne", sans-serif;
       font-weight: 700;
       background: var(--accent);
       color: white;
@@ -84,7 +85,7 @@
     .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .btn-example {
-      font-family: 'Syne', sans-serif;
+      font-family: "Syne", sans-serif;
       font-weight: 600;
       background: #f0ece4;
       color: #555;
@@ -104,7 +105,7 @@
     .btn-example:disabled { opacity: 0.55; cursor: not-allowed; }
 
     .btn-copy {
-      font-family: 'DM Sans', sans-serif;
+      font-family: "DM Sans", sans-serif;
       font-weight: 500;
       background: white;
       color: var(--muted);
@@ -120,7 +121,6 @@
     }
     .btn-copy:hover { background: #f9f7f4; border-color: #bbb; color: var(--ink); }
 
-    /* Tabs */
     .tab-bar {
       display: flex; gap: 4px;
       background: var(--paper); border: 1px solid var(--border);
@@ -128,7 +128,7 @@
     }
     .tab-btn {
       flex: 1;
-      font-family: 'Syne', sans-serif; font-size: 0.78rem; font-weight: 600;
+      font-family: "Syne", sans-serif; font-size: 0.78rem; font-weight: 600;
       letter-spacing: 0.02em; border: none; border-radius: 7px; padding: 9px 12px;
       cursor: pointer; background: transparent; color: var(--muted);
       transition: background 0.15s, color 0.15s; text-align: center;
@@ -143,7 +143,7 @@
     .file-drop:hover, .file-drop.dragover { border-color: var(--accent); background: var(--accent-light); }
 
     textarea {
-      font-family: 'DM Sans', sans-serif; font-size: 0.875rem; line-height: 1.65;
+      font-family: "DM Sans", sans-serif; font-size: 0.875rem; line-height: 1.65;
       resize: vertical; border: 1px solid var(--border); border-radius: 10px;
       padding: 14px 16px; width: 100%; background: var(--paper); color: var(--ink);
       transition: border-color 0.2s, background 0.2s; outline: none;
@@ -152,49 +152,43 @@
     textarea::placeholder { color: #aaa; }
     .survey-textarea { font-size: 0.875rem; border-radius: 8px; margin-top: 6px; }
 
-    /* Progress bars */
     .progress-bg { background: #e8e4dc; border-radius: 999px; height: 16px; overflow: hidden; }
     .progress-fill { height: 100%; border-radius: 999px; width: 0%; transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1); }
 
-    /* Badges */
-    .badge { display: inline-block; padding: 5px 16px; border-radius: 999px; font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.03em; }
+    .badge { display: inline-block; padding: 5px 16px; border-radius: 999px; font-family: "Syne", sans-serif; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.03em; }
     .badge-good { background: var(--accent-light); color: var(--accent); }
     .badge-mid  { background: var(--warn-light);   color: var(--warn); }
     .badge-low  { background: var(--danger-light);  color: var(--danger); }
 
-    /* Keyword chips */
     .kw-chip {
       display: inline-block; background: #f0ece4; border: 1px solid var(--border);
       border-radius: 6px; padding: 3px 10px; font-size: 0.78rem;
-      font-family: 'DM Sans', sans-serif; color: var(--ink); margin: 3px 3px 3px 0;
+      font-family: "DM Sans", sans-serif; color: var(--ink); margin: 3px 3px 3px 0;
     }
 
-    /* Result section blocks */
     .section-aportes { background: #f0faf4; border: 1px solid #c3e6d4; border-radius: 14px; padding: 22px 24px; }
     .section-brechas { background: var(--danger-light); border: 1px solid #f5c2be; border-radius: 14px; padding: 22px 24px; }
     .section-recos   { background: var(--info-light); border: 1px solid #bfdbfe; border-radius: 14px; padding: 22px 24px; }
     .section-ats     { background: var(--ats-bg); border: 1px solid var(--ats-border); border-radius: 14px; padding: 22px 24px; }
     .section-kw      { background: #fafaf7; border: 1px solid var(--border); border-radius: 14px; padding: 22px 24px; }
 
-    .section-title { font-family: 'Syne', sans-serif; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 13px; }
+    .section-title { font-family: "Syne", sans-serif; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 13px; }
 
     .result-list-item { display: flex; align-items: flex-start; gap: 10px; font-size: 0.95rem; line-height: 1.6; margin-bottom: 10px; }
     .result-list-item:last-child { margin-bottom: 0; }
     .result-list-item .emoji { flex-shrink: 0; margin-top: 2px; }
 
-    /* Copy toast */
     #copyToast {
       position: fixed; bottom: 28px; left: 50%;
       transform: translateX(-50%) translateY(10px);
       background: var(--ink); color: white;
-      font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 600;
+      font-family: "Syne", sans-serif; font-size: 0.82rem; font-weight: 600;
       padding: 10px 22px; border-radius: 999px;
       opacity: 0; pointer-events: none;
       transition: opacity 0.25s, transform 0.25s; z-index: 9999; letter-spacing: 0.03em;
     }
     #copyToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* Spinner */
     .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; flex-shrink: 0; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -208,23 +202,22 @@
 
     hr.divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 
-    .pill-btn { border: 1px solid var(--border); border-radius: 999px; padding: 7px 16px; font-size: 0.82rem; font-family: 'DM Sans', sans-serif; cursor: pointer; background: white; color: var(--ink); transition: background 0.15s, color 0.15s, border-color 0.15s; }
+    .pill-btn { border: 1px solid var(--border); border-radius: 999px; padding: 7px 16px; font-size: 0.82rem; font-family: "DM Sans", sans-serif; cursor: pointer; background: white; color: var(--ink); transition: background 0.15s, color 0.15s, border-color 0.15s; }
     .pill-btn:hover { border-color: var(--ink); }
     .pill-btn.selected { background: var(--ink); color: white; border-color: var(--ink); }
 
-    .survey-label { display: block; font-family: 'Syne', sans-serif; font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 9px; }
+    .survey-label { display: block; font-family: "Syne", sans-serif; font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 9px; }
 
-    .numero-encaje { font-family: 'Syne', sans-serif; font-size: 4rem; font-weight: 800; line-height: 1; letter-spacing: -0.04em; }
+    .numero-encaje { font-family: "Syne", sans-serif; font-size: 4rem; font-weight: 800; line-height: 1; letter-spacing: -0.04em; }
     @media (min-width: 768px) { .numero-encaje { font-size: 5rem; } }
 
-    .section-label { font-family: 'Syne', sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; display: block; }
+    .section-label { font-family: "Syne", sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; display: block; }
   </style>
 </head>
 <body>
   <div class="grain"></div>
   <div id="copyToast">✓ Análisis copiado</div>
 
-  <!-- Header -->
   <header style="border-bottom:1px solid var(--border);background:white;position:sticky;top:0;z-index:50;">
     <div class="max-w-5xl mx-auto px-6 md:px-10 lg:px-12 py-4 flex items-center justify-between">
       <span class="syne font-bold text-lg tracking-tight">MatchCV<span style="color:var(--accent)">Lite</span></span>
@@ -234,7 +227,6 @@
 
   <main class="max-w-5xl mx-auto px-6 md:px-10 lg:px-12 py-10 md:py-14">
 
-    <!-- Hero -->
     <div class="mb-10 md:mb-12">
       <h1 class="syne font-extrabold leading-tight mb-4" style="font-size:clamp(2rem,5vw,2.8rem);letter-spacing:-0.025em;max-width:600px;">
         ¿Tu CV encaja<br>con esta vacante?
@@ -249,7 +241,6 @@
       No guardamos tu CV ni la oferta. Todo es privado y temporal.
     </div>
 
-    <!-- Form Card -->
     <div class="card p-6 md:p-8 mb-6">
       <form id="matchForm">
 
@@ -290,7 +281,7 @@
         <!-- Step 2: Oferta -->
         <div class="mb-8">
           <span class="section-label">2 — Oferta laboral</span>
-        
+
           <div class="tabs-offer">
             <button
               type="button"
@@ -312,34 +303,33 @@
               🖼️ Subir imagen (OCR)
             </button>
           </div>
-        
+
           <!-- PANEL TEXTO -->
           <div id="panelOfertaTexto">
             <textarea
               id="ofertaTexto"
               rows="10"
-              placeholder="Pega aquí el texto completo de la oferta laboral: descripción del puesto, funciones, requisitos, habilidades requeridas..."
-              required>
+              placeholder="Pega aquí el texto completo de la oferta laboral: descripción del puesto, funciones, requisitos, habilidades requeridas...">
             </textarea>
             <p style="font-size:0.75rem;color:var(--muted);margin-top:7px;">
               Incluye todo el texto — el sistema filtra automáticamente secciones irrelevantes.
             </p>
           </div>
-        
+
           <!-- PANEL ARCHIVO -->
           <div id="panelOfertaArchivo" style="display:none;">
             <div class="upload-box">
-              <input type="file" id="ofertaArchivo" accept=".pdf,.docx,.txt" style="display: none;" onchange="handleOfertaFileUpload(event)">
+              <input type="file" id="ofertaArchivo" accept=".pdf,.docx,.txt" style="display:none;" onchange="handleOfertaFileUpload(event)">
               <label for="ofertaArchivo" class="upload-label">Seleccionar archivo (PDF/DOCX/TXT, máx. 5MB)</label>
             </div>
           </div>
-        
+
           <!-- PANEL IMAGEN (OCR) -->
           <div id="panelOfertaImagen" style="display:none;">
             <div class="upload-box">
-              <input type="file" id="imageUpload" accept="image/png, image/jpeg" style="display: none;" onchange="processImageWithOCR(event)">
+              <input type="file" id="imageUpload" accept="image/png,image/jpeg" style="display:none;" onchange="processImageWithOCR(event)">
               <label for="imageUpload" class="upload-label">Seleccionar imagen (PNG/JPG, máx. 5MB)</label>
-              <div id="ocrLoader" style="display: none; margin-top: 10px;">Procesando imagen con OCR...</div>
+              <div id="ocrLoader" style="display:none;margin-top:10px;">Procesando imagen con OCR...</div>
             </div>
           </div>
         </div>
@@ -366,7 +356,7 @@
     <!-- Results -->
     <div id="resultado" class="hidden"></div>
 
-    <!-- Category breakdown — injected by renderDesglose() -->
+    <!-- Category breakdown -->
     <div id="desgloseCategories" class="hidden"></div>
 
     <!-- Keywords -->
@@ -440,7 +430,8 @@
     <p style="font-size:0.78rem;color:var(--muted);">Análisis automático sin almacenamiento de datos · Versión de prueba gratuita</p>
   </footer>
 
-  <script src="script.js"></script>
+  <!-- Tesseract must load before script.js uses it -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
