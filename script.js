@@ -631,8 +631,15 @@ if (ofertaImagenInput) {
         'change',
         async function () {
 
-            const file = this.files[0];
-            if (!file) return;
+            const files = Array.from(this.files);
+
+            if (!files.length) return;
+            
+            if (files.length > 2) {
+                alert("Solo puedes subir máximo 2 imágenes.");
+                this.value = "";
+                return;
+            }
 
             const loader =
                 document.getElementById('ocrLoader');
@@ -646,6 +653,10 @@ if (ofertaImagenInput) {
 
             try {
 
+            let textoFinal = "";
+            
+            for (const file of files) {
+            
                 const result =
                     await Tesseract.recognize(
                         file,
@@ -667,14 +678,17 @@ if (ofertaImagenInput) {
 
                 const texto =
                     (result.data.text || '').trim();
+                
+                textoFinal += "\n\n" + texto;
+                }
 
-                if (!texto || texto.length < 20) {
+                if (!textoFinal || textoFinal.length < 20) {
                     loader.textContent =
                         'No se pudo extraer suficiente texto.';
                     return;
                 }
 
-                textarea.value = texto;
+                textarea.value = textoFinal.trim();
 
                 switchOfertaTab('texto');
 
