@@ -562,10 +562,8 @@ document.getElementById('enviarEncuesta').addEventListener('click', async () => 
     btn.disabled = true;
     btn.textContent = 'Enviando...';
     
-    // CAMBIA ESTA URL POR LA QUE TE DIO APPS SCRIPT
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyTDOiYr2AiWYwkHqWUbqQwFh5tqc4uvQ5uBEbmgF23JFP7WN1h59fZ8xt0AJKjp-mMVg/exec';
-    
-    const datos = {
+    // Construir los datos correctamente
+    const datosEncuesta = {
         util: surveyAnswers['util'] || '',
         pago: surveyAnswers['pago'] || '',
         gratis: surveyAnswers['gratis'] || '',
@@ -573,33 +571,28 @@ document.getElementById('enviarEncuesta').addEventListener('click', async () => 
         sugerencia: sugerencia
     };
     
+    console.log('Enviando datos:', datosEncuesta); // Para depurar
+    
+    // URL de Apps Script (cambiala por la tuya)
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyTDOiYr2AiWYwkHqWUbqQwFh5tqc4uvQ5uBEbmgF23JFP7WN1h59fZ8xt0AJKjp-mMVg/exec';
+    
     try {
-        await fetch(APPS_SCRIPT_URL, {
+        const response = await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(datos)
+            body: JSON.stringify(datosEncuesta)
         });
+        
+        const resultado = await response.json();
+        console.log('Respuesta de Apps Script:', resultado);
+        
     } catch (error) {
-        console.log('Error al enviar a Apps Script:', error);
+        console.error('Error al enviar:', error);
     }
     
-    // También enviar al backend como respaldo
-    try {
-        await fetch(`${BACKEND_URL}/feedback`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                respuestas: surveyAnswers, 
-                sugerencia: sugerencia 
-            })
-        });
-    } catch (error) {
-        console.log('Error al enviar al backend:', error);
-    }
-    
+    // Mostrar mensaje de agradecimiento
     const encuestaDiv = document.getElementById('encuesta');
     encuestaDiv.innerHTML = `
         <div class="text-center py-12">
