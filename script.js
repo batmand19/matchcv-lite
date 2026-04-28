@@ -557,37 +557,49 @@ document.querySelectorAll('.pill-btn').forEach(btn => {
 
 document.getElementById('enviarEncuesta').addEventListener('click', async () => {
     const btn = document.getElementById('enviarEncuesta');
-    const sugerencia = document.getElementById('sugerenciaTexto')?.value.trim() || '';
+    const sugerencia = document.getElementById('sugerenciaTexto')?.value?.trim() || '';
+    
     btn.disabled = true;
     btn.textContent = 'Enviando...';
     
-    // --- CAMBIA ESTA URL POR LA DE TU GOOGLE FORM ---
-    const GOOGLE_FORM_URL = 'https://forms.gle/vMWyVUDmfaT9oDB76';
+    // CAMBIA ESTA URL POR LA QUE TE DIO APPS SCRIPT
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyTDOiYr2AiWYwkHqWUbqQwFh5tqc4uvQ5uBEbmgF23JFP7WN1h59fZ8xt0AJKjp-mMVg/exec';
     
-    // --- CAMBIA ESTOS IDs POR LOS DE TUS PREGUNTAS ---
-    // Los IDs se ven como: entry.1234567890
-    const params = new URLSearchParams();
-    params.append('entry.1206045864', surveyAnswers['util'] || '');
-    params.append('entry.301300497', surveyAnswers['pago'] || '');
-    params.append('entry.1637281757', surveyAnswers['gratis'] || '');
-    params.append('entry.1262255451', surveyAnswers['mejora'] || '');
-    params.append('entry.2048742123', sugerencia);
+    const datos = {
+        util: surveyAnswers['util'] || '',
+        pago: surveyAnswers['pago'] || '',
+        gratis: surveyAnswers['gratis'] || '',
+        mejora: surveyAnswers['mejora'] || '',
+        sugerencia: sugerencia
+    };
     
     try {
-        // Enviar a Google Forms (con modo CORS evitado)
-        await fetch(GOOGLE_FORM_URL, {
+        await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors',  // Importante: evita errores de CORS
+            mode: 'no-cors',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Type': 'application/json',
             },
-            body: params.toString()
+            body: JSON.stringify(datos)
         });
     } catch (error) {
-        console.log('Error al enviar:', error);
+        console.log('Error al enviar a Apps Script:', error);
     }
     
-    // Mostrar mensaje de agradecimiento (siempre, aunque el fetch falle por CORS)
+    // También enviar al backend como respaldo
+    try {
+        await fetch(`${BACKEND_URL}/feedback`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                respuestas: surveyAnswers, 
+                sugerencia: sugerencia 
+            })
+        });
+    } catch (error) {
+        console.log('Error al enviar al backend:', error);
+    }
+    
     const encuestaDiv = document.getElementById('encuesta');
     encuestaDiv.innerHTML = `
         <div class="text-center py-12">
