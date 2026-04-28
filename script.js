@@ -606,21 +606,18 @@ document.getElementById('enviarEncuesta').addEventListener('click', async () => 
 let ofertaTabActiva = 'texto';
 
 function switchOfertaTab(tab) {
-    ofertaTabActiva = tab;
-
-    document.getElementById('tabOfertaTexto')
-        .classList.toggle('active', tab === 'texto');
-
-    document.getElementById('tabOfertaImagen')
-        .classList.toggle('active', tab === 'imagen');
-
-    document.getElementById('panelOfertaTexto').style.display =
-        tab === 'texto' ? '' : 'none';
-
-    document.getElementById('panelOfertaImagen').style.display =
-        tab === 'imagen' ? '' : 'none';
+  // Ocultar todos los paneles
+  document.querySelectorAll('#panelOfertaTexto, #panelOfertaArchivo, #panelOfertaImagen').forEach(panel => {
+    panel.style.display = 'none';
+  });
+  // Desactivar todos los botones
+  document.querySelectorAll('#tabOfertaTexto, #tabOfertaArchivo, #tabOfertaImagen').forEach(button => {
+    button.classList.remove('active');
+  });
+  // Mostrar el panel seleccionado y activar el botón
+  document.getElementById(`panelOferta${tab.charAt(0).toUpperCase() + tab.slice(1)}`).style.display = 'block';
+  document.getElementById(`tabOferta${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
 }
-
 
 const ofertaImagenInput =
     document.getElementById('ofertaImagen');
@@ -775,9 +772,8 @@ function handleOfertaFileUpload(event) {
     alert("El archivo debe ser menor a 5MB.");
     return;
   }
-  // Aquí iría la lógica para procesar el archivo (similar a la de CV)
   console.log("Archivo de oferta seleccionado:", file.name);
-  // TODO: Enviar al backend o procesar localmente
+  // TODO: Aquí iría la lógica para enviar el archivo al backend
 }
 
 // Función para procesar imagen con OCR
