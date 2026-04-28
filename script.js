@@ -745,3 +745,60 @@ async function processImageWithOCR(event) {
     document.getElementById('ocrLoader').style.display = 'none';
   }
 }
+
+// Función para cambiar entre tabs de oferta laboral
+function switchOfertaTab(tab) {
+  // Ocultar todos los paneles
+  document.querySelectorAll('#panelOfertaTexto, #panelOfertaArchivo, #panelOfertaImagen').forEach(panel => {
+    panel.style.display = 'none';
+  });
+  // Desactivar todos los botones
+  document.querySelectorAll('#tabOfertaTexto, #tabOfertaArchivo, #tabOfertaImagen').forEach(button => {
+    button.classList.remove('active');
+  });
+  // Mostrar el panel seleccionado y activar el botón
+  document.getElementById(`panelOferta${tab.charAt(0).toUpperCase() + tab.slice(1)}`).style.display = 'block';
+  document.getElementById(`tabOferta${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
+}
+
+// Cargar Tesseract.js desde CDN
+const script = document.createElement('script');
+script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js';
+script.onload = () => console.log("Tesseract.js cargado correctamente.");
+document.head.appendChild(script);
+
+// Función para manejar la subida de archivos de oferta
+function handleOfertaFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    alert("El archivo debe ser menor a 5MB.");
+    return;
+  }
+  // Aquí iría la lógica para procesar el archivo (similar a la de CV)
+  console.log("Archivo de oferta seleccionado:", file.name);
+  // TODO: Enviar al backend o procesar localmente
+}
+
+// Función para procesar imagen con OCR
+async function processImageWithOCR(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    alert("La imagen debe ser menor a 5MB.");
+    return;
+  }
+  document.getElementById('ocrLoader').style.display = 'block';
+  try {
+    const { data: { text } } = await Tesseract.recognize(file, 'spa+eng', {
+      logger: m => console.log(m),
+    });
+    document.getElementById('ofertaTexto').value = text;
+    switchOfertaTab('texto'); // Cambiar al tab de texto para revisar el resultado
+  } catch (error) {
+    console.error("Error en OCR:", error);
+    alert("Error al procesar la imagen. Intenta con otra.");
+  } finally {
+    document.getElementById('ocrLoader').style.display = 'none';
+  }
+}
