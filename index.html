@@ -288,35 +288,52 @@
 
         <!-- Step 2: Oferta -->
         <div class="mb-8">
-        
           <span class="section-label">2 — Oferta laboral</span>
         
           <div class="tabs-offer">
-            <button type="button" id="tabOfertaTexto" class="active" onclick="switchOfertaTab('texto')">Pegar texto</button>
-            <button type="button" id="tabOfertaArchivo" onclick="switchOfertaTab('archivo')">Subir archivo</button>
-            <button type="button" id="tabOfertaImagen" onclick="switchOfertaTab('imagen')">Subir imagen (OCR)</button>
+            <button
+              type="button"
+              id="tabOfertaTexto"
+              class="active"
+              onclick="switchOfertaTab('texto')">
+              📋 Pegar texto
+            </button>
+            <button
+              type="button"
+              id="tabOfertaArchivo"
+              onclick="switchOfertaTab('archivo')">
+              📄 Subir archivo (PDF/DOCX/TXT)
+            </button>
+            <button
+              type="button"
+              id="tabOfertaImagen"
+              onclick="switchOfertaTab('imagen')">
+              🖼️ Subir imagen (OCR)
+            </button>
           </div>
         
           <!-- PANEL TEXTO -->
-        
           <div id="panelOfertaTexto">
-        
             <textarea
               id="ofertaTexto"
               rows="10"
               placeholder="Pega aquí el texto completo de la oferta laboral: descripción del puesto, funciones, requisitos, habilidades requeridas..."
               required>
             </textarea>
-        
             <p style="font-size:0.75rem;color:var(--muted);margin-top:7px;">
               Incluye todo el texto — el sistema filtra automáticamente secciones irrelevantes.
             </p>
-        
           </div>
         
+          <!-- PANEL ARCHIVO -->
+          <div id="panelOfertaArchivo" style="display:none;">
+            <div class="upload-box">
+              <input type="file" id="ofertaArchivo" accept=".pdf,.docx,.txt" style="display: none;" onchange="handleOfertaFileUpload(event)">
+              <label for="ofertaArchivo" class="upload-label">Seleccionar archivo (PDF/DOCX/TXT, máx. 5MB)</label>
+            </div>
+          </div>
         
-          <!-- PANEL IMAGEN -->
-        
+          <!-- PANEL IMAGEN (OCR) -->
           <div id="panelOfertaImagen" style="display:none;">
             <div class="upload-box">
               <input type="file" id="imageUpload" accept="image/png, image/jpeg" style="display: none;" onchange="processImageWithOCR(event)">
@@ -324,6 +341,7 @@
               <div id="ocrLoader" style="display: none; margin-top: 10px;">Procesando imagen con OCR...</div>
             </div>
           </div>
+        </div>
 
         <!-- Action buttons -->
         <div class="flex flex-col gap-3">
