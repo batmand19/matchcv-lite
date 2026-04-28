@@ -47,3 +47,18 @@
     font-size: 14px;
     color: var(--muted);
 }
+
+.upload-label {
+    display: inline-block;
+    padding: 14px 22px;
+    border-radius: 12px;
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.upload-label:hover {
+    transform: translateY(-1px);
+}
