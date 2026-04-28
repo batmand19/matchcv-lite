@@ -292,24 +292,10 @@
           <span class="section-label">2 — Oferta laboral</span>
         
           <div class="tabs-offer">
-        
-            <button
-              type="button"
-              id="tabOfertaTexto"
-              class="active"
-              onclick="switchOfertaTab('texto')">
-              Pegar texto
-            </button>
-        
-            <button
-              type="button"
-              id="tabOfertaImagen"
-              onclick="switchOfertaTab('imagen')">
-              Subir imagen
-            </button>
-        
+            <button type="button" id="tabOfertaTexto" class="active" onclick="switchOfertaTab('texto')">Pegar texto</button>
+            <button type="button" id="tabOfertaArchivo" onclick="switchOfertaTab('archivo')">Subir archivo</button>
+            <button type="button" id="tabOfertaImagen" onclick="switchOfertaTab('imagen')">Subir imagen (OCR)</button>
           </div>
-        
         
           <!-- PANEL TEXTO -->
         
@@ -331,41 +317,13 @@
         
           <!-- PANEL IMAGEN -->
         
-          <div
-            id="panelOfertaImagen"
-            style="display:none;">
-        
+          <div id="panelOfertaImagen" style="display:none;">
             <div class="upload-box">
-            
-                <label for="ofertaImagen" class="upload-label">
-                    📸 Seleccionar imágenes de la oferta laboral
-                </label>
-            
-                <input
-                    type="file"
-                    id="ofertaImagen"
-                    accept="image/png,image/jpeg,image/jpg"
-                    multiple
-                    style="display:none;">
-            
-                <p style="margin-top:14px;">
-                    Puedes subir máximo 2 capturas de pantalla
-                    (LinkedIn, Computrabjo, Indeed, etc.)
-                </p>
-            
+              <input type="file" id="imageUpload" accept="image/png, image/jpeg" style="display: none;" onchange="processImageWithOCR(event)">
+              <label for="imageUpload" class="upload-label">Seleccionar imagen (PNG/JPG, máx. 5MB)</label>
+              <div id="ocrLoader" style="display: none; margin-top: 10px;">Procesando imagen con OCR...</div>
             </div>
-        
-            <div
-              id="ocrLoader"
-              style="display:none; margin-top:16px; font-size:0.9rem; color:var(--muted);">
-        
-              Procesando imagen...
-        
-            </div>
-        
           </div>
-        
-        </div>
 
         <!-- Action buttons -->
         <div class="flex flex-col gap-3">
