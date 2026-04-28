@@ -1,27 +1,37 @@
+/* Estilo para los tabs de oferta laboral */
 .tabs-offer {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 16px;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  background-color: #f8f9fa;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  width: fit-content;
 }
 
 .tabs-offer button {
-    padding: 10px 16px;
-    border-radius: 10px;
-    border: 1px solid #ddd;
-    background: white;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s ease;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .tabs-offer button:hover {
-    border-color: var(--accent);
+  background-color: #e9ecef;
 }
 
 .tabs-offer button.active {
-    font-weight: 600;
-    border-color: var(--accent);
-    color: var(--accent);
+  background-color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #dee2e6;
 }
 
 .upload-box {
