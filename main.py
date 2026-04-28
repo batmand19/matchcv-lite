@@ -7,7 +7,7 @@ from typing import Optional
 
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 
 from analyzer import analyze_cv
 from text_extractor import extract_text_from_file
@@ -143,6 +143,132 @@ async def feedback(data: dict):
         logger.warning("Feedback save failed: %s", e)
         return {"mensaje": "Gracias por tu ayuda", "advertencia": str(e)}
 
+@app.get("/ver-encuesta", response_class=HTMLResponse)
+async def ver_encuesta():
+    try:
+        feedback_path = os.path.join(os.path.dirname(__file__), "feedback.json")
+
+        if not os.path.exists(feedback_path):
+            return HTMLResponse(content="""
+            <html>
+                <body style="font-family: Arial; padding: 30px;">
+                    <h1>Resultados de la Encuesta</h1>
+                    <p>Aún no existe feedback.json</p>
+                </body>
+            </html>
+            """)
+
+        with open(feedback_path, "r", encoding="utf-8") as f:
+            entries = json.load(f)
+
+        if not isinstance(entries, list):
+            entries = []
+
+        total = len(entries)
+
+        filas = ""
+
+        for item in reversed(entries):
+            filas += f"""
+            <tr>
+                <td>{item.get("timestamp", "")}</td>
+                <td>{item.get("util", item.get("utilidad", ""))}</td>
+                <td>{item.get("pago", "")}</td>
+                <td>{item.get("gratis", item.get("analisis_gratis", ""))}</td>
+                <td>{item.get("mejora", "")}</td>
+                <td>{item.get("sugerencia", "")}</td>
+            </tr>
+            """
+
+        html = f"""
+        <html>
+        <head>
+            <title>Resultados Encuesta</title>
+            <style>
+                body {{
+                    font-family: Arial;
+                    padding: 30px;
+                    background: #f8fafc;
+                }}
+
+                h1 {{
+                    margin-bottom: 10px;
+                }}
+
+                .total {{
+                    font-size: 18px;
+                    font-weight: bold;
+                    margin-bottom: 20px;
+                }}
+
+                table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    background: white;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+                }}
+
+                th, td {{
+                    border: 1px solid #ddd;
+                    padding: 12px;
+                    text-align: left;
+                    vertical-align: top;
+                    font-size: 14px;
+                }}
+
+                th {{
+                    background: #111827;
+                    color: white;
+                }}
+
+                tr:nth-child(even) {{
+                    background: #f9f9f9;
+                }}
+
+                tr:hover {{
+                    background: #f1f5f9;
+                }}
+            </style>
+        </head>
+        <body>
+
+            <h1>Resultados de la Encuesta</h1>
+
+            <div class="total">
+                Total de respuestas recibidas: {total}
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Utilidad</th>
+                        <th>Pago</th>
+                        <th>Análisis Gratis Esperados</th>
+                        <th>Mejora Deseada</th>
+                        <th>Sugerencia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {filas}
+                </tbody>
+            </table>
+
+        </body>
+        </html>
+        """
+
+        return HTMLResponse(content=html)
+
+    except Exception as e:
+        return HTMLResponse(content=f"""
+        <html>
+            <body style="font-family: Arial; padding: 30px;">
+                <h1>Error</h1>
+                <p>{str(e)}</p>
+            </body>
+        </html>
+        """)
 
 @app.get("/health")
 async def health():
