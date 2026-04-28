@@ -1,0 +1,49 @@
+.tabs-offer {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.tabs-offer button {
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.tabs-offer button:hover {
+    border-color: var(--accent);
+}
+
+.tabs-offer button.active {
+    font-weight: 600;
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.upload-box {
+    border: 2px dashed #d1d5db;
+    border-radius: 14px;
+    padding: 28px;
+    text-align: center;
+    background: #fafafa;
+    transition: all 0.2s ease;
+}
+
+.upload-box:hover {
+    border-color: var(--accent);
+    background: #fcfcfc;
+}
+
+.upload-box input[type="file"] {
+    margin-bottom: 10px;
+}
+
+#ocrLoader {
+    padding: 14px 0;
+    font-size: 14px;
+    color: var(--muted);
+}
