@@ -543,34 +543,57 @@ function escapeHtml(str) {
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ---- Survey ----
+// --- Survey ----
 const surveyAnswers = {};
+
 document.querySelectorAll('.pill-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const q = btn.dataset.q;
-    document.querySelectorAll(`.pill-btn[data-q="${q}"]`).forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    surveyAnswers[q] = btn.dataset.v;
-  });
+    btn.addEventListener('click', () => {
+        const q = btn.dataset.q;
+        document.querySelectorAll(`.pill-btn[data-q="${q}"]`).forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        surveyAnswers[q] = btn.dataset.v;
+    });
 });
 
 document.getElementById('enviarEncuesta').addEventListener('click', async () => {
-  const btn        = document.getElementById('enviarEncuesta');
-  const sugerencia = document.getElementById('sugerenciaTexto')?.value?.trim() || '';
-  btn.disabled     = true;
-  btn.textContent  = 'Enviando...';
-  try {
-    await fetch(`${BACKEND_URL}/feedback`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ respuestas: surveyAnswers, sugerencia }),
-    });
-  } catch { /* ignore */ }
-  encuestaDiv.innerHTML = `
-    <div class="text-center py-12">
-      <p style="font-size:2.4rem;margin-bottom:12px;">🙌</p>
-      <p class="syne font-bold text-base">¡Gracias por tu ayuda!</p>
-      <p style="font-size:0.9rem;color:var(--muted);margin-top:6px;line-height:1.5;">Tu feedback nos ayuda a mejorar MatchCV Lite.</p>
-    </div>
-  `;
+    const btn = document.getElementById('enviarEncuesta');
+    const sugerencia = document.getElementById('sugerenciaTexto')?.value.trim() || '';
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+    
+    // --- CAMBIA ESTA URL POR LA DE TU GOOGLE FORM ---
+    const GOOGLE_FORM_URL = 'https://forms.gle/vMWyVUDmfaT9oDB76';
+    
+    // --- CAMBIA ESTOS IDs POR LOS DE TUS PREGUNTAS ---
+    // Los IDs se ven como: entry.1234567890
+    const params = new URLSearchParams();
+    params.append('entry.1206045864', surveyAnswers['util'] || '');
+    params.append('entry.301300497', surveyAnswers['pago'] || '');
+    params.append('entry.1637281757', surveyAnswers['gratis'] || '');
+    params.append('entry.1262255451', surveyAnswers['mejora'] || '');
+    params.append('entry.2048742123', sugerencia);
+    
+    try {
+        // Enviar a Google Forms (con modo CORS evitado)
+        await fetch(GOOGLE_FORM_URL, {
+            method: 'POST',
+            mode: 'no-cors',  // Importante: evita errores de CORS
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: params.toString()
+        });
+    } catch (error) {
+        console.log('Error al enviar:', error);
+    }
+    
+    // Mostrar mensaje de agradecimiento (siempre, aunque el fetch falle por CORS)
+    const encuestaDiv = document.getElementById('encuesta');
+    encuestaDiv.innerHTML = `
+        <div class="text-center py-12">
+            <p style="font-size:2.4rem;margin-bottom:12px;">🙌</p>
+            <p class="syne font-bold text-base">¡Gracias por tu ayuda!</p>
+            <p style="font-size:0.9rem;color:var(--muted);margin-top:6px;line-height:1.5;">Tu feedback nos ayuda a mejorar MatchCV Lite.</p>
+        </div>
+    `;
 });
