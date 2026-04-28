@@ -3,7 +3,7 @@ const BACKEND_URL = (() => {
   if (typeof BACKEND_OVERRIDE !== 'undefined') return BACKEND_OVERRIDE;
   const h = window.location.hostname;
   if (h === 'localhost' || h === '127.0.0.1' || h === '') return 'http://localhost:8000';
-  return window.location.origin;
+  return 'https://matchcv-backend.onrender.com';
 })();
 
 // ---- Oferta de ejemplo ----
