@@ -711,3 +711,37 @@ if (ofertaImagenInput) {
         }
     );
 }
+// Cargar Tesseract.js desde CDN
+const script = document.createElement('script');
+script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js';
+document.head.appendChild(script);
+
+// Función para procesar imagen con OCR
+async function processImageWithOCR(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Validar tamaño (5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    alert("La imagen debe ser menor a 5MB.");
+    return;
+  }
+
+  // Mostrar loader
+  document.getElementById('ocrLoader').style.display = 'block';
+
+  try {
+    const { data: { text } } = await Tesseract.recognize(file, 'spa+eng', {
+      logger: m => console.log(m),
+    });
+
+    // Asignar el texto extraído al textarea de oferta (o enviar directamente al backend)
+    document.getElementById('ofertaTexto').value = text;
+    switchOfertaTab('texto'); // Opcional: cambiar al tab de texto para revisar el resultado
+  } catch (error) {
+    console.error("Error en OCR:", error);
+    alert("Error al procesar la imagen. Intenta con otra.");
+  } finally {
+    document.getElementById('ocrLoader').style.display = 'none';
+  }
+}
