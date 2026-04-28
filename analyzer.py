@@ -1,27 +1,35 @@
+"""
+analyzer.py — MatchCV Lite
+Full CV-vs-offer analysis with zero external ML dependencies.
+TF-IDF and cosine similarity are implemented from scratch using only
+the Python standard library (math, re, collections, unicodedata).
+"""
+
+import math
 import re
 import unicodedata
-
-try:
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.metrics.pairwise import cosine_similarity
-    _SKLEARN_OK = True
-except ImportError:
-    _SKLEARN_OK = False
+from collections import Counter
 
 
-STOP_WORDS_ES = [
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+STOP_WORDS_ES = frozenset([
     'que', 'de', 'la', 'el', 'en', 'y', 'a', 'los', 'se', 'del',
     'las', 'un', 'por', 'con', 'una', 'para', 'es', 'al', 'lo',
-    'como', 'mas', 'pero', 'sus', 'le', 'ya', 'cuando'
-]
+    'como', 'mas', 'pero', 'sus', 'le', 'ya', 'cuando', 'no', 'su',
+    'si', 'te', 'mi', 'me', 'nos', 'les', 'fue', 'ser', 'han', 'hay',
+    'este', 'esta', 'esto', 'son', 'has', 'era',
+])
 
-# SAS is excluded from base list — added dynamically only if offer mentions it
+# SAS excluded — added dynamically only when offer mentions it explicitly
 HERRAMIENTAS_BASE = [
     'python', 'sql', 'excel', 'powerbi', 'tableau', 'looker', 'qlik',
     'azure', 'aws', 'gcp', 'git', 'docker', 'kubernetes', 'airflow',
     'pandas', 'numpy', 'scikit-learn', 'tensorflow', 'pytorch',
     'spss', 'stata', 'matlab', 'r', 'java', 'scala', 'javascript',
-    'kpi', 'dashboard', 'analisis_datos', 'planeacion_financiera', 'automatizacion'
+    'kpi', 'dashboard', 'analisis_datos', 'planeacion_financiera', 'automatizacion',
 ]
 
 _BLOQUES_IRRELEVANTES = [
@@ -37,20 +45,18 @@ _BLOQUES_IRRELEVANTES = [
     r'abrir caminos',
 ]
 
-# Used for profile-alignment scoring (section 4)
 _VERBOS_ACCION = [
     'analizar', 'validar', 'automatizar', 'transformar', 'crear', 'medir',
     'gestionar', 'disenar', 'implementar', 'desarrollar', 'coordinar',
     'reportar', 'optimizar', 'monitorear', 'construir', 'extraer',
-    'procesar', 'visualizar', 'modelar', 'liderar', 'controlar'
+    'procesar', 'visualizar', 'modelar', 'liderar', 'controlar',
 ]
 
-# Used for functional keyword analysis (section 2 / brechas)
 _VERBOS_FUNCIONALES = [
     'automatizar', 'transformar', 'analizar', 'procesar', 'construir',
     'desarrollar', 'medir', 'reportar', 'gestionar', 'coordinar',
     'implementar', 'optimizar', 'extraer', 'modelar', 'visualizar',
-    'validar', 'liderar', 'controlar', 'monitorear', 'disenar'
+    'validar', 'liderar', 'controlar', 'monitorear', 'disenar',
 ]
 
 _SUSTANTIVOS_CLAVE = [
@@ -60,7 +66,7 @@ _SUSTANTIVOS_CLAVE = [
     'analisis_datos', 'automatizacion', 'inteligencia_de_negocios',
     'cierre_financiero', 'variacion', 'ejecucion_presupuestal',
     'indicadores', 'metricas', 'seguimiento', 'conciliacion',
-    'proyeccion', 'pipeline', 'etl', 'data_warehouse', 'bi'
+    'proyeccion', 'pipeline', 'etl', 'data_warehouse', 'bi',
 ]
 
 _TITULOS_VACANTE = [
@@ -89,22 +95,22 @@ _TITULOS_VACANTE = [
 ]
 
 _SINONIMOS = [
-    (['power bi', 'powerbi'],                                    'powerbi'),
-    (['hojas de calculo', 'hoja de calculo', 'excel'],           'excel'),
-    (['consultas sql', 'bases de datos', 'sql'],                  'sql'),
-    (['programacion python', 'python'],                           'python'),
-    (['indicadores', 'metricas', 'kpi'],                          'kpi'),
-    (['automatizar procesos', 'automatizacion', 'automatizar'],   'automatizacion'),
-    (['panel de control', 'tablero', 'dashboard'],                'dashboard'),
+    (['power bi', 'powerbi'],                                     'powerbi'),
+    (['hojas de calculo', 'hoja de calculo', 'excel'],            'excel'),
+    (['consultas sql', 'bases de datos', 'sql'],                   'sql'),
+    (['programacion python', 'python'],                            'python'),
+    (['indicadores', 'metricas', 'kpi'],                           'kpi'),
+    (['automatizar procesos', 'automatizacion', 'automatizar'],    'automatizacion'),
+    (['panel de control', 'tablero', 'dashboard'],                 'dashboard'),
     (['planificacion financiera', 'analisis financiero',
-      'planeacion financiera'],                                    'planeacion_financiera'),
-    (['data analysis', 'data analytics', 'analisis de datos'],    'analisis_datos'),
-    (['flujo de caja'],                                            'flujo_de_caja'),
-    (['modelos predictivos', 'modelo predictivo'],                 'modelos_predictivos'),
-    (['inteligencia de negocios', 'business intelligence'],        'inteligencia_de_negocios'),
-    (['cierre financiero'],                                        'cierre_financiero'),
-    (['ejecucion presupuestal'],                                   'ejecucion_presupuestal'),
-    (['data warehouse'],                                           'data_warehouse'),
+      'planeacion financiera'],                                     'planeacion_financiera'),
+    (['data analysis', 'data analytics', 'analisis de datos'],     'analisis_datos'),
+    (['flujo de caja'],                                             'flujo_de_caja'),
+    (['modelos predictivos', 'modelo predictivo'],                  'modelos_predictivos'),
+    (['inteligencia de negocios', 'business intelligence'],         'inteligencia_de_negocios'),
+    (['cierre financiero'],                                         'cierre_financiero'),
+    (['ejecucion presupuestal'],                                    'ejecucion_presupuestal'),
+    (['data warehouse'],                                            'data_warehouse'),
 ]
 
 _DESGLOSE_VACIO = {"herramientas": 0.0, "funcional": 0.0, "perfil": 0.0, "claridad": 0.0}
@@ -145,6 +151,67 @@ _H_DISPLAY_MAP = {
 
 
 # ---------------------------------------------------------------------------
+# Pure-Python TF-IDF cosine similarity
+# ---------------------------------------------------------------------------
+
+def _tokenizar(texto: str) -> list:
+    """Split normalised text into tokens, removing stop-words and short tokens."""
+    return [
+        w for w in texto.split()
+        if w not in STOP_WORDS_ES and len(w) > 2 and not re.match(r'^\d+$', w)
+    ]
+
+
+def _tf(tokens: list) -> dict:
+    """Term-frequency map (raw count / total)."""
+    total = len(tokens)
+    if total == 0:
+        return {}
+    counts = Counter(tokens)
+    return {t: c / total for t, c in counts.items()}
+
+
+def calcular_similitud_tfidf(texto1: str, texto2: str) -> float:
+    """
+    Pure-Python TF-IDF cosine similarity between two texts.
+    Returns a float in [0, 1].
+    Uses the standard IDF formula: log((N+1) / (df+1)) + 1  (smoothed).
+    """
+    tokens1 = _tokenizar(texto1)
+    tokens2 = _tokenizar(texto2)
+
+    if not tokens1 or not tokens2:
+        return 0.0
+
+    tf1 = _tf(tokens1)
+    tf2 = _tf(tokens2)
+
+    # Build vocabulary
+    vocab = set(tf1) | set(tf2)
+
+    # IDF over a "corpus" of 2 documents
+    N = 2
+    idf: dict = {}
+    for term in vocab:
+        df = (1 if term in tf1 else 0) + (1 if term in tf2 else 0)
+        idf[term] = math.log((N + 1) / (df + 1)) + 1  # smoothed IDF
+
+    # TF-IDF vectors
+    vec1 = {t: tf1.get(t, 0.0) * idf[t] for t in vocab}
+    vec2 = {t: tf2.get(t, 0.0) * idf[t] for t in vocab}
+
+    # Cosine similarity
+    dot     = sum(vec1[t] * vec2[t] for t in vocab)
+    norm1   = math.sqrt(sum(v * v for v in vec1.values()))
+    norm2   = math.sqrt(sum(v * v for v in vec2.values()))
+
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+
+    return min(1.0, dot / (norm1 * norm2))
+
+
+# ---------------------------------------------------------------------------
 # Public helpers
 # ---------------------------------------------------------------------------
 
@@ -157,7 +224,7 @@ def filtrar_oferta(texto: str) -> str:
         if m:
             texto = texto[:m.start()]
             break
-    lineas = texto.split('\n')
+    lineas  = texto.split('\n')
     limpias = []
     for linea in lineas:
         norm = _preprocess_line(linea)
@@ -166,7 +233,8 @@ def filtrar_oferta(texto: str) -> str:
     return '\n'.join(limpias).strip()
 
 
-limpiar_oferta = filtrar_oferta  # backward-compat alias
+# backward-compat alias
+limpiar_oferta = filtrar_oferta
 
 
 def normalizar_terminos(texto: str) -> str:
@@ -273,7 +341,6 @@ def _extraer_palabras_clave_oferta(oferta_clean: str, n: int = 10) -> list:
 
 
 def _calcular_freq_oferta(oferta_clean: str) -> dict:
-    """Word frequency map for the offer — used in brecha/rec logic."""
     freq: dict = {}
     for w in oferta_clean.split():
         if w not in STOP_WORDS_ES and len(w) > 2 and not re.match(r'^\d+$', w):
@@ -282,7 +349,6 @@ def _calcular_freq_oferta(oferta_clean: str) -> dict:
 
 
 def _extraer_tareas_principales(oferta_clean: str) -> list:
-    """Extract 2-3 main task phrases from the offer for low-match recommendation."""
     patrones_tareas = [
         (r'\bautomatizar\b',  'automatización de procesos'),
         (r'\banalizar\b',     'análisis de datos'),
@@ -309,10 +375,6 @@ def _extraer_tareas_principales(oferta_clean: str) -> list:
 
 
 def _analizar_palabras_funcionales(cv_clean: str, oferta_clean: str) -> dict:
-    """
-    Analyses functional verb and noun overlap between CV and offer.
-    Returns a dict with verb/noun lists and an overlap ratio (0-1).
-    """
     verbos_oferta    = [v for v in _VERBOS_FUNCIONALES if v in oferta_clean]
     verbos_cv        = [v for v in _VERBOS_FUNCIONALES if v in cv_clean]
     verbos_faltantes = [v for v in verbos_oferta if v not in verbos_cv]
@@ -324,7 +386,7 @@ def _analizar_palabras_funcionales(cv_clean: str, oferta_clean: str) -> dict:
     total = len(verbos_oferta) + len(sustantivos_oferta)
     match = (len(verbos_oferta) - len(verbos_faltantes)) + \
             (len(sustantivos_oferta) - len(sustantivos_faltantes))
-    ratio = (match / total) if total > 0 else 0.5   # neutral when nothing detected
+    ratio = (match / total) if total > 0 else 0.5
 
     return {
         "verbos_oferta":          verbos_oferta,
@@ -402,8 +464,10 @@ def _analyze_cv_inner(cv_text: str, oferta_text: str) -> dict:
     if len(cv_text) < 100 or len(oferta_text) < 100:
         result = dict(_RESULTADO_TEXTO_CORTO)
         if len(cv_text) < 100 and len(oferta_text) >= 100:
+            result = dict(_RESULTADO_TEXTO_CORTO)
             result["brechas"] = ["El texto del CV es muy corto (mínimo 100 caracteres)."]
         elif len(oferta_text) < 100 and len(cv_text) >= 100:
+            result = dict(_RESULTADO_TEXTO_CORTO)
             result["brechas"] = ["El texto de la oferta es muy corto (mínimo 100 caracteres)."]
         return result
 
@@ -420,32 +484,23 @@ def _analyze_cv_inner(cv_text: str, oferta_text: str) -> dict:
         return dict(_DEFAULT_RESULT)
 
     # -----------------------------------------------------------------------
-    # 1. TF-IDF cosine similarity (contributes to base score)
+    # 1. TF-IDF cosine similarity — pure Python implementation
     # -----------------------------------------------------------------------
-    encaje_global_base = 0.0
-    if _SKLEARN_OK:
-        try:
-            vectorizer   = TfidfVectorizer(stop_words=STOP_WORDS_ES, max_features=500)
-            tfidf_matrix = vectorizer.fit_transform([cv_clean, oferta_clean])
-            encaje_global_base = float(
-                cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-            ) * 100
-        except Exception:
-            encaje_global_base = 0.0
+    encaje_global_base = calcular_similitud_tfidf(cv_clean, oferta_clean) * 100
 
     # -----------------------------------------------------------------------
     # 2. Palabras clave funcionales (35%) — verb + domain-noun overlap
     # -----------------------------------------------------------------------
-    func                  = _analizar_palabras_funcionales(cv_clean, oferta_clean)
-    puntaje_funcional     = func["ratio"] * 35
+    func              = _analizar_palabras_funcionales(cv_clean, oferta_clean)
+    puntaje_funcional = func["ratio"] * 35
 
     # Raw keyword overlap — used for brecha priority-1 check
-    palabras_oferta = set(oferta_clean.split()) - set(STOP_WORDS_ES)
+    palabras_oferta = set(oferta_clean.split()) - STOP_WORDS_ES
     palabras_cv     = set(cv_clean.split())
     coincidencia_kw = (len(palabras_oferta & palabras_cv) / len(palabras_oferta)) \
                       if palabras_oferta else 0.0
 
-    # Offer word-frequency map — built once, reused in brechas/recos
+    # Offer word-frequency map — reused in brechas/recos
     freq_oferta = _calcular_freq_oferta(oferta_clean)
 
     # -----------------------------------------------------------------------
@@ -478,10 +533,10 @@ def _analyze_cv_inner(cv_text: str, oferta_text: str) -> dict:
     seniority_oferta   = next((s for s in seniority_patterns if s in oferta_clean), None)
     puntaje_seniority  = 15 if (seniority_cv and seniority_oferta and seniority_cv == seniority_oferta) else 0
 
-    verbos_oferta_set  = {v for v in _VERBOS_ACCION if v in oferta_clean}
-    verbos_cv_set      = {v for v in _VERBOS_ACCION if v in cv_clean}
-    verbos_comunes     = verbos_oferta_set & verbos_cv_set
-    puntaje_perfil     = puntaje_seniority + min(5, len(verbos_comunes))
+    verbos_oferta_set = {v for v in _VERBOS_ACCION if v in oferta_clean}
+    verbos_cv_set     = {v for v in _VERBOS_ACCION if v in cv_clean}
+    verbos_comunes    = verbos_oferta_set & verbos_cv_set
+    puntaje_perfil    = puntaje_seniority + min(5, len(verbos_comunes))
 
     # -----------------------------------------------------------------------
     # 5. Claridad y estructura (10%)
@@ -501,7 +556,8 @@ def _analyze_cv_inner(cv_text: str, oferta_text: str) -> dict:
     if tiene_vinetas:              puntaje_claridad += 1
 
     # -----------------------------------------------------------------------
-    # Composite score
+    # Composite score  (weights: 35% TF-IDF base + 35% func + 35% tools + 20% perfil + 10% claridad)
+    # Note: base TF-IDF acts as a tiebreaker / blend rather than a separate 35 slot.
     # -----------------------------------------------------------------------
     encaje_global = round(min(100.0, max(0.0,
         encaje_global_base * 0.35
@@ -564,7 +620,7 @@ def _analyze_cv_inner(cv_text: str, oferta_text: str) -> dict:
             f"Faltan verbos de acción relevantes como {sample} que aparecen en la oferta"
         )
 
-    # Priority 4: missing domain nouns/concepts
+    # Priority 4: missing domain nouns
     sustantivos_faltantes = func["sustantivos_faltantes"]
     if sustantivos_faltantes and len(brechas) < 3:
         sf_display = [s.replace('_', ' ').title() for s in sustantivos_faltantes[:3]]
@@ -583,7 +639,7 @@ def _analyze_cv_inner(cv_text: str, oferta_text: str) -> dict:
     if not tiene_fechas and len(brechas) < 3:
         brechas.append("No se detectaron fechas en la experiencia laboral")
 
-    # Fallback: force at least one brecha when score is low but nothing fired
+    # Fallback: force at least one brecha when score is low
     if not brechas and encaje_global < 40:
         brechas.append(
             "El perfil general no se alinea con lo que busca la vacante. "
@@ -600,7 +656,6 @@ def _analyze_cv_inner(cv_text: str, oferta_text: str) -> dict:
 
     recomendaciones = []
 
-    # Rec 1: keyword gap (only when relevant)
     if encaje_global < 50 and coincidencia_kw < 0.30:
         palabras_faltantes_cv = sorted(
             [w for w in palabras_oferta
@@ -613,11 +668,9 @@ def _analyze_cv_inner(cv_text: str, oferta_text: str) -> dict:
                 f"{', '.join(palabras_faltantes_cv)}"
             )
 
-    # Rec 2: dates
     if not tiene_fechas:
         recomendaciones.append("Asegúrate de incluir fechas (mes/año) en cada experiencia laboral")
 
-    # Rec 3: quantifiable achievements — specific example when none found
     if num_logros < 3:
         if not tiene_logros:
             recomendaciones.append(
@@ -627,26 +680,21 @@ def _analyze_cv_inner(cv_text: str, oferta_text: str) -> dict:
         else:
             recomendaciones.append("Agrega al menos 3 logros medibles con números o porcentajes")
 
-    # Rec 4: tools — only from the offer
     for h in tools_faltantes_disp[:2]:
         recomendaciones.append(f"Incluye '{h}' en tu sección de habilidades técnicas")
 
-    # Rec 5: CV length
     if palabras_cv_count > 800:
         recomendaciones.append("Reduce tu CV a 500-700 palabras, elimina texto descriptivo genérico")
 
-    # Rec 6: no tools section at all
     if not tools_cv:
         recomendaciones.append("Crea una sección 'Habilidades Técnicas' con herramientas y tecnologías")
 
-    # Rec 7: title alignment
     if titulo_clave and titulo_clave not in cv_clean:
         recomendaciones.append(
             f"Incluye el título de la vacante o sus variantes (ej: '{titulo_display}') "
             f"en tu perfil o resumen profesional"
         )
 
-    # Rec 8: low-match specific — tasks from offer
     if encaje_global < 45:
         tareas     = _extraer_tareas_principales(oferta_clean)
         tareas_str = ', '.join(f'"{t}"' for t in tareas)
@@ -678,12 +726,11 @@ def _analyze_cv_inner(cv_text: str, oferta_text: str) -> dict:
 
     palabras_clave_oferta = _extraer_palabras_clave_oferta(oferta_clean, n=10)
 
-    # Desglose for frontend category progress bars (absolute points, max shown alongside)
     desglose = {
-        "herramientas": round(puntaje_tools, 1),     # out of 35
-        "funcional":    round(puntaje_funcional, 1),  # out of 35
-        "perfil":       round(puntaje_perfil, 1),     # out of 20
-        "claridad":     round(puntaje_claridad, 1),   # out of 10
+        "herramientas": round(puntaje_tools, 1),
+        "funcional":    round(puntaje_funcional, 1),
+        "perfil":       round(puntaje_perfil, 1),
+        "claridad":     round(puntaje_claridad, 1),
     }
 
     return {
