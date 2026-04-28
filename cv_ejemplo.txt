@@ -1,0 +1,38 @@
+LAURA MARCELA RINCÓN OSPINA
+Analista de Datos y Planeación Financiera
+Bogotá, Colombia | laura.rincon@email.com | +57 311 456 7890
+
+PERFIL PROFESIONAL
+Analista de Datos con 4 años de experiencia en planeación financiera, análisis de datos y automatización de reportes financieros. Especializada en transformar grandes volúmenes de datos en insights accionables para la toma de decisiones estratégicas. Manejo avanzado de Excel, Power BI y SQL. Orientada a resultados con logros comprobables en reducción de tiempos y optimización de procesos.
+
+EXPERIENCIA
+
+Analista de Planeación Financiera Senior
+Grupo Empresarial Andino S.A.S. — Bogotá | Enero 2022 – Presente
+- Automaticé el proceso de cierre financiero mensual con Excel y Power BI, reduciendo el tiempo de generación de reportes en un 40%.
+- Desarrollé dashboards interactivos en Power BI para el seguimiento de KPIs de rentabilidad, presupuesto vs. ejecución y variaciones de margen, consultados por 3 gerencias semanalmente.
+- Analicé base de clientes con más de 50.000 registros usando SQL, identificando segmentos estratégicos que generaron un incremento del 18% en ingresos durante 2023.
+- Construí modelo de planeación financiera y forecast anual en Excel para 5 unidades de negocio, alcanzando una precisión del 92% respecto al cierre real.
+- Automaticé la extracción de datos contables desde SAP hacia Excel mediante macros VBA, eliminando 12 horas de trabajo manual mensual.
+
+Analista de Datos Junior
+Finanzas Digitales Colombia — Bogotá | Marzo 2020 – Diciembre 2021
+- Construí reportes de análisis de cartera usando SQL sobre bases de datos PostgreSQL con más de 2 millones de registros.
+- Diseñé tableros de control en Power BI para monitorear indicadores de mora y recuperación, mejorando la visibilidad del equipo comercial en un 35%.
+- Automaticé informes regulatorios en Excel, reduciendo errores manuales en un 60%.
+- Generé reportes de métricas y KPIs semanales para la dirección comercial, facilitando decisiones sobre políticas de crédito.
+
+HABILIDADES
+Excel avanzado (Power Query, tablas dinámicas, VBA), Power BI, SQL (PostgreSQL, MySQL), Python (pandas, numpy), análisis de datos, planeación financiera, KPIs, dashboard, automatización, Git.
+
+EDUCACIÓN
+Ingeniería Industrial — Universidad de los Andes, Bogotá (Diciembre 2019)
+Certificación Power BI Data Analyst Associate PL-300 — Microsoft (2022)
+Diplomado Análisis de Datos con Python y SQL — Universidad EAFIT (2021)
+
+LOGROS DESTACADOS
+- Reducción del 40% en tiempo de elaboración de reportes financieros mediante automatización.
+- Incremento del 18% en ingresos del segmento estratégico gracias a análisis de datos con SQL.
+- Mejora del 35% en visibilidad de indicadores clave para el equipo comercial.
+- Precisión del 92% en modelo de forecast financiero anual para 5 unidades de negocio.
+- Eliminación de 12 horas de trabajo manual mensual con automatización en Excel y VBA.

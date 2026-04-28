@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MatchCV Lite – Analiza tu CV</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --ink: #0f0f0f;
+      --paper: #f5f2ec;
+      --accent: #1a7a4a;
+      --accent-light: #d4ede1;
+      --accent-dark: #145c38;
+      --warn: #b86b10;
+      --warn-light: #fef3e2;
+      --danger: #b83224;
+      --danger-light: #fdecea;
+      --info-light: #eff6ff;
+      --ats-bg: #f8f4ff;
+      --ats-border: #d4bbff;
+      --ats-text: #5b21b6;
+      --muted: #6b6b6b;
+      --border: #ddd8ce;
+      --card-bg: #ffffff;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 18px;
+      line-height: 1.65;
+      background-color: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .syne { font-family: 'Syne', sans-serif; }
+
+    .grain {
+      position: fixed; inset: 0; pointer-events: none; z-index: 100;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.3;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      width: 100%;
+    }
+
+    .btn-primary {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 14px 28px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      letter-spacing: 0.02em;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-dark);
+      transform: scale(1.02);
+      box-shadow: 0 4px 20px rgba(26,122,74,0.25);
+    }
+    .btn-primary:active:not(:disabled) { transform: scale(0.99); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .btn-example {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      background: #f0ece4;
+      color: #555;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.12s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .btn-example:hover:not(:disabled) { background: #e5e0d8; transform: scale(1.01); }
+    .btn-example:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .btn-copy {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      background: white;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 10px 20px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .btn-copy:hover { background: #f9f7f4; border-color: #bbb; color: var(--ink); }
+
+    /* Tabs */
+    .tab-bar {
+      display: flex; gap: 4px;
+      background: var(--paper); border: 1px solid var(--border);
+      border-radius: 10px; padding: 4px; margin-bottom: 14px;
+    }
+    .tab-btn {
+      flex: 1;
+      font-family: 'Syne', sans-serif; font-size: 0.78rem; font-weight: 600;
+      letter-spacing: 0.02em; border: none; border-radius: 7px; padding: 9px 12px;
+      cursor: pointer; background: transparent; color: var(--muted);
+      transition: background 0.15s, color 0.15s; text-align: center;
+    }
+    .tab-btn.active { background: white; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+    .file-drop {
+      border: 2px dashed var(--border); border-radius: 12px; padding: 28px 20px;
+      text-align: center; cursor: pointer;
+      transition: border-color 0.2s, background 0.2s; background: var(--paper);
+    }
+    .file-drop:hover, .file-drop.dragover { border-color: var(--accent); background: var(--accent-light); }
+
+    textarea {
+      font-family: 'DM Sans', sans-serif; font-size: 0.875rem; line-height: 1.65;
+      resize: vertical; border: 1px solid var(--border); border-radius: 10px;
+      padding: 14px 16px; width: 100%; background: var(--paper); color: var(--ink);
+      transition: border-color 0.2s, background 0.2s; outline: none;
+    }
+    textarea:focus { border-color: var(--accent); background: white; }
+    textarea::placeholder { color: #aaa; }
+    .survey-textarea { font-size: 0.875rem; border-radius: 8px; margin-top: 6px; }
+
+    /* Progress bars */
+    .progress-bg { background: #e8e4dc; border-radius: 999px; height: 16px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 999px; width: 0%; transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1); }
+
+    /* Badges */
+    .badge { display: inline-block; padding: 5px 16px; border-radius: 999px; font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.03em; }
+    .badge-good { background: var(--accent-light); color: var(--accent); }
+    .badge-mid  { background: var(--warn-light);   color: var(--warn); }
+    .badge-low  { background: var(--danger-light);  color: var(--danger); }
+
+    /* Keyword chips */
+    .kw-chip {
+      display: inline-block; background: #f0ece4; border: 1px solid var(--border);
+      border-radius: 6px; padding: 3px 10px; font-size: 0.78rem;
+      font-family: 'DM Sans', sans-serif; color: var(--ink); margin: 3px 3px 3px 0;
+    }
+
+    /* Result section blocks */
+    .section-aportes { background: #f0faf4; border: 1px solid #c3e6d4; border-radius: 14px; padding: 22px 24px; }
+    .section-brechas { background: var(--danger-light); border: 1px solid #f5c2be; border-radius: 14px; padding: 22px 24px; }
+    .section-recos   { background: var(--info-light); border: 1px solid #bfdbfe; border-radius: 14px; padding: 22px 24px; }
+    .section-ats     { background: var(--ats-bg); border: 1px solid var(--ats-border); border-radius: 14px; padding: 22px 24px; }
+    .section-kw      { background: #fafaf7; border: 1px solid var(--border); border-radius: 14px; padding: 22px 24px; }
+
+    .section-title { font-family: 'Syne', sans-serif; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 13px; }
+
+    .result-list-item { display: flex; align-items: flex-start; gap: 10px; font-size: 0.95rem; line-height: 1.6; margin-bottom: 10px; }
+    .result-list-item:last-child { margin-bottom: 0; }
+    .result-list-item .emoji { flex-shrink: 0; margin-top: 2px; }
+
+    /* Copy toast */
+    #copyToast {
+      position: fixed; bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: var(--ink); color: white;
+      font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 600;
+      padding: 10px 22px; border-radius: 999px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s, transform 0.25s; z-index: 9999; letter-spacing: 0.03em;
+    }
+    #copyToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Spinner */
+    .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .fade-in { animation: fadeUp 0.45s ease both; }
+    .stagger-1 { animation-delay: 0.06s; }
+    .stagger-2 { animation-delay: 0.13s; }
+    .stagger-3 { animation-delay: 0.20s; }
+    .stagger-4 { animation-delay: 0.27s; }
+    .stagger-5 { animation-delay: 0.34s; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+    hr.divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+    .pill-btn { border: 1px solid var(--border); border-radius: 999px; padding: 7px 16px; font-size: 0.82rem; font-family: 'DM Sans', sans-serif; cursor: pointer; background: white; color: var(--ink); transition: background 0.15s, color 0.15s, border-color 0.15s; }
+    .pill-btn:hover { border-color: var(--ink); }
+    .pill-btn.selected { background: var(--ink); color: white; border-color: var(--ink); }
+
+    .survey-label { display: block; font-family: 'Syne', sans-serif; font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 9px; }
+
+    .numero-encaje { font-family: 'Syne', sans-serif; font-size: 4rem; font-weight: 800; line-height: 1; letter-spacing: -0.04em; }
+    @media (min-width: 768px) { .numero-encaje { font-size: 5rem; } }
+
+    .section-label { font-family: 'Syne', sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="grain"></div>
+  <div id="copyToast">✓ Análisis copiado</div>
+
+  <!-- Header -->
+  <header style="border-bottom:1px solid var(--border);background:white;position:sticky;top:0;z-index:50;">
+    <div class="max-w-5xl mx-auto px-6 md:px-10 lg:px-12 py-4 flex items-center justify-between">
+      <span class="syne font-bold text-lg tracking-tight">MatchCV<span style="color:var(--accent)">Lite</span></span>
+      <span style="font-size:0.68rem;background:var(--accent-light);color:var(--accent);padding:4px 13px;border-radius:999px;font-weight:700;font-family:'Syne',sans-serif;letter-spacing:0.07em;">BETA GRATUITA</span>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-6 md:px-10 lg:px-12 py-10 md:py-14">
+
+    <!-- Hero -->
+    <div class="mb-10 md:mb-12">
+      <h1 class="syne font-extrabold leading-tight mb-4" style="font-size:clamp(2rem,5vw,2.8rem);letter-spacing:-0.025em;max-width:600px;">
+        ¿Tu CV encaja<br>con esta vacante?
+      </h1>
+      <p class="leading-relaxed" style="color:var(--muted);font-size:1rem;max-width:520px;">
+        Sube tu hoja de vida, pega la oferta laboral y recibe un análisis de encaje en segundos — gratis y sin guardar tus datos.
+      </p>
+    </div>
+
+    <div class="mb-6 flex items-center gap-2" style="font-size:0.8rem;color:var(--muted);">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      No guardamos tu CV ni la oferta. Todo es privado y temporal.
+    </div>
+
+    <!-- Form Card -->
+    <div class="card p-6 md:p-8 mb-6">
+      <form id="matchForm">
+
+        <!-- Step 1: CV -->
+        <div class="mb-7">
+          <span class="section-label">1 — Tu CV</span>
+          <div class="tab-bar">
+            <button type="button" class="tab-btn active" id="tabArchivo" onclick="switchTab('archivo')">
+              📎 Subir archivo (PDF / DOCX / TXT)
+            </button>
+            <button type="button" class="tab-btn" id="tabTexto" onclick="switchTab('texto')">
+              📝 Pegar texto del CV
+            </button>
+          </div>
+
+          <div id="panelArchivo">
+            <div class="file-drop" id="fileDrop" onclick="document.getElementById('cvFile').click()">
+              <input type="file" id="cvFile" accept=".pdf,.docx,.txt" class="hidden" />
+              <div id="fileLabel">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto mb-2" style="color:var(--muted)">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14,2 14,8 20,8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+                <p class="font-medium" style="font-size:0.95rem;color:var(--ink);">Haz clic o arrastra tu archivo aquí</p>
+                <p style="font-size:0.78rem;color:var(--muted);margin-top:5px;">PDF · DOCX · TXT — Máx 5 MB</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="panelTexto" style="display:none;">
+            <textarea id="cvTexto" rows="10" placeholder="Pega aquí el contenido completo de tu hoja de vida... (mínimo 100 caracteres)"></textarea>
+            <p id="cvTextoCount" style="font-size:0.72rem;color:var(--muted);margin-top:5px;text-align:right;">0 caracteres</p>
+          </div>
+        </div>
+
+        <!-- Step 2: Oferta -->
+        <div class="mb-8">
+          <span class="section-label">2 — Oferta laboral</span>
+          <textarea id="ofertaTexto" rows="10" placeholder="Pega aquí el texto completo de la oferta laboral: descripción del puesto, funciones, requisitos, habilidades requeridas..." required></textarea>
+          <p style="font-size:0.75rem;color:var(--muted);margin-top:7px;">Incluye todo el texto — el sistema filtra automáticamente secciones irrelevantes.</p>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="flex flex-col gap-3">
+          <button type="submit" class="btn-primary w-full" id="submitBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Analizar encaje
+          </button>
+          <div class="flex gap-2 flex-wrap">
+            <button type="button" class="btn-example" id="btnCVEjemplo" onclick="cargarCVEjemplo()">
+              📄 Cargar CV de ejemplo
+            </button>
+            <button type="button" class="btn-example" id="btnOfertaEjemplo" onclick="cargarOfertaEjemplo()">
+              📋 Cargar oferta de ejemplo
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Results -->
+    <div id="resultado" class="hidden"></div>
+
+    <!-- Category breakdown — injected by renderDesglose() -->
+    <div id="desgloseCategories" class="hidden"></div>
+
+    <!-- Keywords -->
+    <div id="palabrasClave" class="hidden"></div>
+
+    <!-- ATS Context -->
+    <div id="contextoAts" class="hidden"></div>
+
+    <!-- Copy button -->
+    <div id="copyBtnWrapper" class="hidden mt-4 text-center">
+      <button class="btn-copy" onclick="copiarAnalisis()">
+        📋 Copiar análisis al portapapeles
+      </button>
+    </div>
+
+    <!-- Survey -->
+    <div id="encuesta" class="hidden card p-6 md:p-8 mt-6 fade-in">
+      <p class="syne font-bold text-base mb-1">¿Nos ayudas a mejorar?</p>
+      <p class="leading-relaxed mb-6" style="font-size:0.9rem;color:var(--muted);">Son 5 preguntas rápidas — menos de 2 minutos.</p>
+
+      <div class="space-y-6">
+        <div>
+          <label class="survey-label">¿Te resultó útil el análisis?</label>
+          <div class="flex gap-2 flex-wrap">
+            <button type="button" class="pill-btn" data-q="q1" data-v="Sí">Sí</button>
+            <button type="button" class="pill-btn" data-q="q1" data-v="Regular">Regular</button>
+            <button type="button" class="pill-btn" data-q="q1" data-v="No">No</button>
+          </div>
+        </div>
+        <div>
+          <label class="survey-label">¿Pagarías por una versión más completa?</label>
+          <div class="flex gap-2 flex-wrap">
+            <button type="button" class="pill-btn" data-q="q2" data-v="Sí">Sí</button>
+            <button type="button" class="pill-btn" data-q="q2" data-v="Depende">Depende del precio</button>
+            <button type="button" class="pill-btn" data-q="q2" data-v="No">No</button>
+          </div>
+        </div>
+        <div>
+          <label class="survey-label">¿Cuántos análisis gratis esperarías por mes?</label>
+          <div class="flex gap-2 flex-wrap">
+            <button type="button" class="pill-btn" data-q="q3" data-v="5">5</button>
+            <button type="button" class="pill-btn" data-q="q3" data-v="10">10</button>
+            <button type="button" class="pill-btn" data-q="q3" data-v="50">50</button>
+            <button type="button" class="pill-btn" data-q="q3" data-v="Ilimitados">Ilimitados</button>
+          </div>
+        </div>
+        <div>
+          <label class="survey-label">¿Qué funcionalidad te interesaría más?</label>
+          <div class="flex gap-2 flex-wrap">
+            <button type="button" class="pill-btn" data-q="q4" data-v="Mejor análisis">Mejor análisis</button>
+            <button type="button" class="pill-btn" data-q="q4" data-v="Historial">Historial</button>
+            <button type="button" class="pill-btn" data-q="q4" data-v="Comparar ofertas">Comparar ofertas</button>
+            <button type="button" class="pill-btn" data-q="q4" data-v="Carta de presentación">Carta de presentación</button>
+          </div>
+        </div>
+        <div>
+          <label class="survey-label">¿Qué mejorarías de MatchCV Lite? (opcional)</label>
+          <textarea id="sugerenciaTexto" rows="2" class="survey-textarea" placeholder="Ej: Más precisión en herramientas, análisis de más vacantes, modo oscuro..."></textarea>
+        </div>
+      </div>
+
+      <button id="enviarEncuesta" class="btn-primary mt-8" style="background:#0f0f0f;">
+        Enviar respuestas
+      </button>
+    </div>
+
+  </main>
+
+  <footer style="border-top:1px solid var(--border);margin-top:72px;padding:36px 24px;text-align:center;">
+    <p class="syne font-bold text-sm mb-1">MatchCV Lite</p>
+    <p style="font-size:0.78rem;color:var(--muted);">Análisis automático sin almacenamiento de datos · Versión de prueba gratuita</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
